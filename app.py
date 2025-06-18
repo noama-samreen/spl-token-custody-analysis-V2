@@ -36,7 +36,7 @@ st.markdown("""
 <style>
 /* Base styles */
 .main {
-    padding: 1rem;
+    padding: 0;
     max-width: 1200px;
     margin: 0 auto;
 }
@@ -45,8 +45,8 @@ st.markdown("""
 .security-review-container {
     background-color: white;
     border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     border-left: 4px solid;
     height: 100%;
@@ -66,7 +66,7 @@ st.markdown("""
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.125rem;
 }
 
 .security-review-value {
@@ -87,12 +87,17 @@ st.markdown("""
 /* Metric adjustments */
 [data-testid="stMetricValue"] {
     font-size: 1.2rem !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 [data-testid="stMetricLabel"] {
     font-size: 0.875rem !important;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 /* Remove default padding and margins */
@@ -112,19 +117,19 @@ div[data-testid="stVerticalBlock"] > div {
     font-size: 0.75rem !important;
     word-break: break-all;
     background: #f8f9fa;
-    padding: 0.5rem;
+    padding: 0.375rem;
     border-radius: 6px;
-    margin: 0.25rem 0 1rem 0;
+    margin: 0.125rem 0 0.5rem 0;
 }
 
 /* Authority section */
 .authority-section {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
 }
 
 /* Security checks section */
 .section-header {
-    margin: 2rem 0 1rem 0;
+    margin: 1rem 0 0.5rem 0;
 }
 
 .section-header h2 {
@@ -136,12 +141,13 @@ div[data-testid="stVerticalBlock"] > div {
 
 .section-description {
     color: #666;
-    margin: 0.5rem 0 0 0;
+    margin: 0.25rem 0 0 0;
 }
 
 /* Column spacing */
 [data-testid="column"] {
     padding: 0 !important;
+    gap: 0.5rem !important;
 }
 
 /* Streamlit element overrides */
@@ -153,6 +159,28 @@ div[data-testid="stVerticalBlock"] > div {
 .stMarkdown {
     margin: 0 !important;
     padding: 0 !important;
+}
+
+/* Title section adjustments */
+.title-section {
+    padding: 0.5rem 0;
+    margin-bottom: 0.5rem;
+}
+
+/* Tab adjustments */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 1rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Input field adjustments */
+.stTextInput > div {
+    margin-bottom: 0.5rem !important;
+}
+
+/* Remove extra spacing from block containers */
+[data-testid="stVerticalBlock"] {
+    gap: 0.5rem !important;
 }
 </style>
 """, unsafe_allow_html=True)
