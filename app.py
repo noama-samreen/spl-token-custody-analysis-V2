@@ -206,8 +206,9 @@ with tab1:
         with col2:
             st.metric("Token Program", "Token-2022" if "Token 2022" in result_dict.get('owner_program', '') else "SPL Token")
         
-        # Add mitigation inputs for failing checks
-        st.subheader("Security Checks & Mitigations")
+        # Initialize session state for mitigations if not exists
+        if 'mitigations' not in st.session_state:
+            st.session_state.mitigations = {}
         
         # Check for failing conditions and display mitigation inputs
         failing_checks = []
@@ -220,51 +221,77 @@ with tab1:
         if "Token 2022" in result_dict.get('owner_program', ''):
             if result_dict.get('permanent_delegate'):
                 failing_checks.append('permanent_delegate')
-            if result_dict.get('transfer_hook'):
+            if result.get('transfer_hook'):
                 failing_checks.append('transfer_hook')
-            if result_dict.get('confidential_transfers'):
+            if result.get('confidential_transfers'):
                 failing_checks.append('confidential_transfers')
-            if result_dict.get('transaction_fees') not in [None, 0]:
+            if result.get('transaction_fees') not in [None, 0]:
                 failing_checks.append('transfer_fees')
         
-        # Display mitigation inputs for each failing check
-        for check in failing_checks:
-            with st.expander(f"{check.replace('_', ' ').title()} Check - Failed"):
-                # Documentation input
-                st.text_area(
-                    "Mitigation Documentation",
-                    key=f"{check}_documentation",
-                    value=st.session_state.mitigations[check]['documentation'],
-                    help="Enter the documentation for how this risk is mitigated"
-                )
-                
-                # Mitigation applied checkbox
-                st.checkbox(
-                    "Mitigation Applied",
-                    key=f"{check}_applied",
-                    value=st.session_state.mitigations[check]['applied'],
-                    help="Check if the mitigation has been applied"
-                )
-                
-                # Links input (one per line)
-                st.text_area(
-                    "Reference Links (one per line)",
-                    key=f"{check}_links",
-                    value='\n'.join(st.session_state.mitigations[check]['links']),
-                    help="Enter reference links, one per line"
-                )
-                
-                # Update session state when inputs change
-                st.session_state.mitigations[check] = {
-                    'documentation': st.session_state[f"{check}_documentation"],
-                    'applied': st.session_state[f"{check}_applied"],
-                    'links': [link for link in st.session_state[f"{check}_links"].split('\n') if link.strip()]
-                }
-                
-                # Update the result dictionary with the mitigation details
-                if 'mitigations' not in result_dict:
-                    result_dict['mitigations'] = {}
-                result_dict['mitigations'][check] = st.session_state.mitigations[check]
+        if failing_checks:
+            st.subheader("Security Checks & Mitigations")
+            
+            # Display each failing check
+            for check in failing_checks:
+                with st.expander(f"{check.replace('_', ' ').title()} Check - Failed"):
+                    # Initialize this check in session state if not exists
+                    if check not in st.session_state.mitigations:
+                        st.session_state.mitigations[check] = {
+                            'documentation': '',
+                            'applied': False,
+                            'links': []
+                        }
+                    
+                    # Documentation input
+                    documentation = st.text_area(
+                        "Mitigation Documentation",
+                        key=f"{check}_documentation",
+                        value=st.session_state.mitigations[check].get('documentation', ''),
+                        help="Enter the documentation for how this risk is mitigated"
+                    )
+                    
+                    # Links input (one per line)
+                    links_text = st.text_area(
+                        "Reference Links (one per line)",
+                        key=f"{check}_links",
+                        value='\n'.join(st.session_state.mitigations[check].get('links', [])),
+                        help="Enter reference links, one per line"
+                    )
+                    
+                    # Update session state with current input values
+                    st.session_state.mitigations[check].update({
+                        'documentation': documentation,
+                        'links': [link for link in links_text.split('\n') if link.strip()]
+                    })
+                    
+                    # Apply Mitigation button
+                    if st.button("Apply Mitigation", key=f"apply_{check}"):
+                        if not documentation.strip():
+                            st.error("Please provide mitigation documentation before applying.")
+                        else:
+                            st.session_state.mitigations[check]['applied'] = True
+                            
+                            # Update the result dictionary with the mitigation details
+                            if 'mitigations' not in result_dict:
+                                result_dict['mitigations'] = {}
+                            result_dict['mitigations'][check] = st.session_state.mitigations[check]
+                            
+                            # Recalculate security review status
+                            has_unmitigated_risks = False
+                            for c in failing_checks:
+                                if not st.session_state.mitigations[c].get('applied', False):
+                                    has_unmitigated_risks = True
+                                    break
+                            
+                            st.session_state.analysis_results['security_review'] = 'FAILED' if has_unmitigated_risks else 'PASSED'
+                            st.success("Mitigation applied successfully!")
+                            st.rerun()
+                    
+                    # Show current status
+                    if st.session_state.mitigations[check].get('applied', False):
+                        st.success("✅ Mitigation Applied")
+                    else:
+                        st.warning("❌ Mitigation Not Applied")
         
         # Display authorities in columns
         col1, col2 = st.columns(2)
@@ -417,81 +444,78 @@ with tab2:
                     if result.get('transaction_fees') not in [None, 0]:
                         failing_checks.append('transfer_fees')
                 
+                # Initialize mitigation data for each failing check if not exists
+                for check in failing_checks:
+                    if check not in st.session_state.batch_mitigations[i]:
+                        st.session_state.batch_mitigations[i][check] = {
+                            'documentation': '',
+                            'applied': False,
+                            'links': []
+                        }
+                
                 if failing_checks:
                     st.subheader("Security Checks & Mitigations")
                     # Display mitigation inputs for each failing check
                     for check in failing_checks:
                         with st.expander(f"{check.replace('_', ' ').title()} Check - Failed"):
+                            # Initialize this check in session state if not exists
+                            if check not in st.session_state.batch_mitigations[i]:
+                                st.session_state.batch_mitigations[i][check] = {
+                                    'documentation': '',
+                                    'applied': False,
+                                    'links': []
+                                }
+                            
                             # Documentation input
-                            st.text_area(
+                            documentation = st.text_area(
                                 "Mitigation Documentation",
                                 key=f"batch_{i}_{check}_documentation",
-                                value=st.session_state.batch_mitigations[i].get(check, {}).get('documentation', ''),
+                                value=st.session_state.batch_mitigations[i][check].get('documentation', ''),
                                 help="Enter the documentation for how this risk is mitigated"
                             )
                             
-                            # Mitigation applied checkbox
-                            st.checkbox(
-                                "Mitigation Applied",
-                                key=f"batch_{i}_{check}_applied",
-                                value=st.session_state.batch_mitigations[i].get(check, {}).get('applied', False),
-                                help="Check if the mitigation has been applied"
-                            )
-                            
                             # Links input (one per line)
-                            st.text_area(
+                            links_text = st.text_area(
                                 "Reference Links (one per line)",
                                 key=f"batch_{i}_{check}_links",
-                                value='\n'.join(st.session_state.batch_mitigations[i].get(check, {}).get('links', [])),
+                                value='\n'.join(st.session_state.batch_mitigations[i][check].get('links', [])),
                                 help="Enter reference links, one per line"
                             )
                             
-                            # Update session state when inputs change
-                            st.session_state.batch_mitigations[i][check] = {
-                                'documentation': st.session_state[f"batch_{i}_{check}_documentation"],
-                                'applied': st.session_state[f"batch_{i}_{check}_applied"],
-                                'links': [link for link in st.session_state[f"batch_{i}_{check}_links"].split('\n') if link.strip()]
-                            }
-                        
-                        # Add reanalyze button for this token
-                        if st.button("Apply Mitigations and Reanalyze", key=f"reanalyze_batch_{i}"):
-                            # Update the token details with mitigation information
-                            if 'mitigations' not in result:
-                                result['mitigations'] = {}
+                            # Update session state with current input values
+                            st.session_state.batch_mitigations[i][check].update({
+                                'documentation': documentation,
+                                'links': [link for link in links_text.split('\n') if link.strip()]
+                            })
                             
-                            for check in failing_checks:
-                                result['mitigations'][check] = st.session_state.batch_mitigations[i][check]
+                            # Apply Mitigation button
+                            if st.button("Apply Mitigation", key=f"batch_{i}_apply_{check}"):
+                                if not documentation.strip():
+                                    st.error("Please provide mitigation documentation before applying.")
+                                else:
+                                    st.session_state.batch_mitigations[i][check]['applied'] = True
+                                    
+                                    # Update the result dictionary with the mitigation details
+                                    if 'mitigations' not in result:
+                                        result['mitigations'] = {}
+                                    result['mitigations'][check] = st.session_state.batch_mitigations[i][check]
+                                    
+                                    # Recalculate security review status
+                                    has_unmitigated_risks = False
+                                    for c in failing_checks:
+                                        if not st.session_state.batch_mitigations[i][c].get('applied', False):
+                                            has_unmitigated_risks = True
+                                            break
+                                    
+                                    result['security_review'] = 'FAILED' if has_unmitigated_risks else 'PASSED'
+                                    st.success("Mitigation applied successfully!")
+                                    st.rerun()
                             
-                            # Recalculate security review status
-                            has_unmitigated_risks = False
-                            if result.get('freeze_authority'):
-                                check = 'freeze_authority'
-                                if check not in st.session_state.batch_mitigations[i] or not st.session_state.batch_mitigations[i][check]['applied']:
-                                    has_unmitigated_risks = True
-                            
-                            if "Token 2022" in result.get('owner_program', ''):
-                                if (result.get('permanent_delegate') and 
-                                    ('permanent_delegate' not in st.session_state.batch_mitigations[i] or 
-                                    not st.session_state.batch_mitigations[i]['permanent_delegate']['applied'])):
-                                    has_unmitigated_risks = True
-                                
-                                if (result.get('transfer_hook') and 
-                                    ('transfer_hook' not in st.session_state.batch_mitigations[i] or 
-                                    not st.session_state.batch_mitigations[i]['transfer_hook']['applied'])):
-                                    has_unmitigated_risks = True
-                                
-                                if (result.get('confidential_transfers') and 
-                                    ('confidential_transfers' not in st.session_state.batch_mitigations[i] or 
-                                    not st.session_state.batch_mitigations[i]['confidential_transfers']['applied'])):
-                                    has_unmitigated_risks = True
-                                
-                                if (result.get('transaction_fees') not in [None, 0] and 
-                                    ('transfer_fees' not in st.session_state.batch_mitigations[i] or 
-                                    not st.session_state.batch_mitigations[i]['transfer_fees']['applied'])):
-                                    has_unmitigated_risks = True
-                            
-                            result['security_review'] = 'FAILED' if has_unmitigated_risks else 'PASSED'
-                            st.rerun()
+                            # Show current status
+                            if st.session_state.batch_mitigations[i][check].get('applied', False):
+                                st.success("✅ Mitigation Applied")
+                            else:
+                                st.warning("❌ Mitigation Not Applied")
                 
                 # Display Token-2022 features if applicable
                 if "Token 2022" in result.get('owner_program', ''):
