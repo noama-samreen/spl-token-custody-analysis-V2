@@ -1,12 +1,13 @@
+# Import required libraries
 import streamlit as st
-import asyncio
-import aiohttp
 import json
-from spl_token_analysis import get_token_details_async, process_tokens_concurrently
-from spl_report_generator import create_pdf
-import tempfile
+import aiohttp
+import asyncio
 import os
+import tempfile
 import zipfile
+from datetime import datetime
+from spl_token_analysis import get_token_details_async, create_pdf
 
 # Initialize session state if not already done
 if 'analysis_results' not in st.session_state:
@@ -16,7 +17,7 @@ if 'batch_results' not in st.session_state:
 
 # Page config
 st.set_page_config(
-    page_title="Solana Token Security Analyzer",
+    page_title="SPL Token Security Analyzer",
     page_icon="🔍",
     layout="wide"
 )
@@ -242,39 +243,50 @@ if st.button("Analyze Token", use_container_width=True):
     else:
         try:
             with st.spinner("Analyzing token..."):
-                result = analyze_token(token_address)
-                st.session_state.analysis_results = result.to_dict()
+                # Define async function for token analysis
+                async def get_token():
+                    async with aiohttp.ClientSession() as session:
+                        details, _ = await get_token_details_async(token_address, session)
+                        return details
                 
-                # Initialize session state for mitigations
-                if 'mitigations' not in st.session_state:
-                    st.session_state.mitigations = {}
+                # Run the async function
+                result = asyncio.run(get_token())
                 
-                # Check for failing conditions
-                failing_checks = []
-                
-                # Check freeze authority
-                if result.get('freeze_authority'):
-                    failing_checks.append('freeze_authority')
-                
-                # Check Token-2022 specific features
-                if "Token 2022" in result.get('owner_program', ''):
-                    if result.get('permanent_delegate'):
-                        failing_checks.append('permanent_delegate')
-                    if result.get('transfer_hook'):
-                        failing_checks.append('transfer_hook')
-                    if result.get('confidential_transfers'):
-                        failing_checks.append('confidential_transfers')
-                    if result.get('transaction_fees') not in [None, 0]:
-                        failing_checks.append('transfer_fees')
-                
-                # Initialize mitigations for each failing check
-                for check in failing_checks:
-                    if check not in st.session_state.mitigations:
-                        st.session_state.mitigations[check] = {
-                            'documentation': '',
-                            'links': [],
-                            'applied': False
-                        }
+                if isinstance(result, str):  # Error message
+                    st.error(result)
+                else:
+                    st.session_state.analysis_results = result.to_dict()
+                    
+                    # Initialize session state for mitigations
+                    if 'mitigations' not in st.session_state:
+                        st.session_state.mitigations = {}
+                    
+                    # Check for failing conditions
+                    failing_checks = []
+                    
+                    # Check freeze authority
+                    if result.get('freeze_authority'):
+                        failing_checks.append('freeze_authority')
+                    
+                    # Check Token-2022 specific features
+                    if "Token 2022" in result.get('owner_program', ''):
+                        if result.get('permanent_delegate'):
+                            failing_checks.append('permanent_delegate')
+                        if result.get('transfer_hook'):
+                            failing_checks.append('transfer_hook')
+                        if result.get('confidential_transfers'):
+                            failing_checks.append('confidential_transfers')
+                        if result.get('transaction_fees') not in [None, 0]:
+                            failing_checks.append('transfer_fees')
+                    
+                    # Initialize mitigations for each failing check
+                    for check in failing_checks:
+                        if check not in st.session_state.mitigations:
+                            st.session_state.mitigations[check] = {
+                                'documentation': '',
+                                'links': [],
+                                'applied': False
+                            }
 
             # Display results if they exist
             if st.session_state.analysis_results:
