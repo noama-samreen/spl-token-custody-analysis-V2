@@ -328,12 +328,6 @@ with tab1:
                             # Display each failing check
                             for check in failing_checks:
                                 with st.expander(f"{check.replace('_', ' ').title()} Check - Failed"):
-                                    st.markdown(f"""
-                                        <div class="mitigation-section">
-                                            <div class="mitigation-header">{check.replace('_', ' ').title()} Mitigation</div>
-                                        </div>
-                                    """, unsafe_allow_html=True)
-                                    
                                     # Documentation input with concise instructions and example
                                     st.markdown("##### Mitigation Documentation")
                                     st.markdown("""
