@@ -34,218 +34,18 @@ st.set_page_config(
 # Custom CSS
 st.markdown("""
 <style>
-/* Base styles and resets */
+/* Base styles */
 .main {
-    padding: 2rem;
+    padding: 1rem;
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* Title section */
-.title-section {
-    padding: 2rem 0;
-    margin-bottom: 1rem;
-}
-
-.title-section h1 {
-    color: #2D3748;
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.title-section h1 .icon {
-    font-size: 2rem;
-}
-
-.title-section p {
-    color: #4A5568;
-    font-size: 1.1rem;
-    margin: 1rem 0;
-    font-weight: 400;
-    max-width: 800px;
-}
-
-/* Tab styling */
-.stTabs {
-    margin-top: 1rem;
-}
-
-.stTabs [data-baseweb="tab-list"] {
-    gap: 2rem;
-}
-
-.stTabs [data-baseweb="tab"] {
-    padding: 1rem 0;
-    font-size: 1rem;
-    font-weight: 500;
-}
-
-.stTabs [data-baseweb="tab-highlight"] {
-    background-color: #FF4B4B;
-    height: 3px;
-}
-
-/* Input fields */
-.stTextInput > div > div > input {
-    background-color: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 0.75rem;
-    font-size: 0.95rem;
-    transition: all 0.2s ease;
-}
-
-.stTextInput > div > div > input:focus {
-    border-color: #7047EB;
-    box-shadow: 0 0 0 2px rgba(112, 71, 235, 0.1);
-}
-
-/* Section headers */
-.section-header {
-    margin: 2rem 0 1rem 0;
-    padding: 1rem;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.section-header h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin-bottom: 0.5rem;
-}
-
-.section-description {
-    font-size: 1rem;
-    color: #666;
-    margin-bottom: 0;
-}
-
-/* Mitigation sections */
-.mitigation-section {
-    background-color: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin: 1rem 0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    border: 1px solid #f0f0f0;
-}
-
-.mitigation-header {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin-bottom: 0.5rem;
-}
-
-.mitigation-description {
-    font-size: 0.9rem;
-    color: #666;
-    margin-bottom: 1.5rem;
-}
-
-/* Status indicators */
-.mitigation-status {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.75rem 1.25rem;
-    border-radius: 999px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    margin: 0.5rem 0;
-    transition: all 0.2s ease;
-}
-
-.status-applied {
-    background-color: #e6f4ea;
-    color: #1e4620;
-    border: 1px solid #a8dab5;
-}
-
-.status-not-applied {
-    background-color: #fef7e6;
-    color: #8c6c1f;
-    border: 1px solid #fbe7a8;
-}
-
-/* Input fields in mitigation */
-.stTextArea > div > div > textarea {
-    border-radius: 8px;
-    border: 1px solid #e0e0e0;
-    padding: 0.75rem;
-    font-size: 0.95rem;
-    min-height: 120px;
-    background-color: #f8f9fa;
-    transition: all 0.2s ease;
-}
-
-.stTextArea > div > div > textarea:focus {
-    border-color: #7047EB;
-    box-shadow: 0 0 0 2px rgba(112, 71, 235, 0.1);
-    background-color: white;
-}
-
-/* Token address section */
-.token-address {
-    background-color: #f8f9fa;
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    border: 1px solid #e0e0e0;
-}
-
-/* Reviewer section */
-.reviewer-section {
-    display: flex;
-    gap: 2rem;
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-/* Analyze button */
-.stButton > button {
-    width: 100%;
-    background: linear-gradient(45deg, #7047EB, #9747FF);
-    color: white;
-    border: none;
-    padding: 1rem;
-    font-size: 1rem;
-    font-weight: 600;
-    border-radius: 12px;
-    margin: 1rem 0;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.stButton > button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(112, 71, 235, 0.2);
-    background: linear-gradient(45deg, #6037DB, #8637EF);
-}
-
-/* Metrics styling */
-.metric-container {
-    background-color: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    border: 1px solid #f0f0f0;
-}
-
+/* Security review container */
 .security-review-container {
     background-color: white;
     border-radius: 12px;
-    padding: 2rem;
+    padding: 1.5rem;
     margin-bottom: 1rem;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     border-left: 4px solid;
@@ -266,7 +66,7 @@ st.markdown("""
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
 }
 
 .security-review-value {
@@ -284,7 +84,7 @@ st.markdown("""
     color: #28a745;
 }
 
-/* Adjust metric values */
+/* Metric adjustments */
 [data-testid="stMetricValue"] {
     font-size: 1.2rem !important;
 }
@@ -297,16 +97,16 @@ st.markdown("""
 
 /* Remove default padding and margins */
 [data-testid="metric-container"] {
-    padding-bottom: 0 !important;
-    margin-bottom: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
 div[data-testid="stVerticalBlock"] > div {
-    padding-bottom: 0 !important;
-    margin-bottom: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
-/* Address display style */
+/* Address display */
 .address-display {
     font-family: 'Courier New', monospace;
     font-size: 0.75rem !important;
@@ -314,92 +114,45 @@ div[data-testid="stVerticalBlock"] > div {
     background: #f8f9fa;
     padding: 0.5rem;
     border-radius: 6px;
-    margin-top: 0;
-    margin-bottom: 1.5rem;
+    margin: 0.25rem 0 1rem 0;
 }
 
-/* Authority section spacing */
-.stMetric {
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
+/* Authority section */
+.authority-section {
+    margin-bottom: 0.5rem;
 }
 
-/* Raw data viewer */
-.streamlit-expanderHeader {
-    background-color: white !important;
-    border: 1px solid #e0e0e0 !important;
-    border-radius: 8px !important;
-    padding: 1rem !important;
-    margin: 0.5rem 0 !important;
-    font-weight: 600 !important;
-    color: #1a1a1a !important;
-    transition: all 0.2s ease;
+/* Security checks section */
+.section-header {
+    margin: 2rem 0 1rem 0;
 }
 
-.streamlit-expanderHeader:hover {
-    background-color: #f8f9fa !important;
-}
-
-.streamlit-expanderContent {
-    border: 1px solid #e0e0e0 !important;
-    border-top: none !important;
-    border-radius: 0 0 8px 8px !important;
-    padding: 1.5rem !important;
-}
-
-/* Download buttons */
-.stDownloadButton > button {
-    background-color: white;
+.section-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
     color: #1a1a1a;
-    border: 1px solid #e0e0e0;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: all 0.2s ease;
+    margin: 0;
 }
 
-.stDownloadButton > button:hover {
-    background-color: #f8f9fa;
-    border-color: #7047EB;
-    color: #7047EB;
-}
-
-/* Radio buttons */
-.stRadio > div {
-    padding: 1rem;
-    background: white;
-    border-radius: 8px;
-    border: 1px solid #e0e0e0;
-}
-
-/* Footer */
-footer {
-    margin-top: 3rem;
-    padding-top: 2rem;
-    border-top: 1px solid #e0e0e0;
-    text-align: center;
+.section-description {
     color: #666;
+    margin: 0.5rem 0 0 0;
 }
 
-footer a {
-    color: #7047EB;
-    text-decoration: none;
-    font-weight: 500;
+/* Column spacing */
+[data-testid="column"] {
+    padding: 0 !important;
 }
 
-footer a:hover {
-    text-decoration: underline;
+/* Streamlit element overrides */
+.element-container {
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .main {
-        padding: 1rem;
-    }
-    
-    .metric-container {
-        margin-bottom: 1rem;
-    }
+.stMarkdown {
+    margin: 0 !important;
+    padding: 0 !important;
 }
 </style>
 """, unsafe_allow_html=True)
