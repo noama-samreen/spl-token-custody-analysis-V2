@@ -426,11 +426,17 @@ trusted Token Program"""
     if not has_no_freeze and token_data.get('mitigations', {}).get('freeze_authority'):
         mitigation = token_data['mitigations']['freeze_authority']
         if mitigation['applied']:
-            # Create hyperlinked text
+            # Create hyperlinked text from documentation
             doc_text = mitigation['documentation']
-            for link in mitigation.get('links', []):
-                if link in doc_text:
-                    doc_text = doc_text.replace(link, f'<link href="{link}">{link}</link>')
+            # Find URLs in the text and convert them to ReportLab hyperlinks
+            words = doc_text.split()
+            linked_text = []
+            for word in words:
+                if word.startswith(('http://', 'https://')):
+                    linked_text.append(f'<link href="{word}">{word}</link>')
+                else:
+                    linked_text.append(word)
+            doc_text = ' '.join(linked_text)
             elements.append(Paragraph(doc_text, risk_body_style))
     else:
         elements.append(Paragraph("N/A", risk_body_style))
@@ -457,10 +463,16 @@ trusted Token Program"""
         if not has_no_delegate and token_data.get('mitigations', {}).get('permanent_delegate'):
             mitigation = token_data['mitigations']['permanent_delegate']
             if mitigation['applied']:
+                # Create hyperlinked text from documentation
                 doc_text = mitigation['documentation']
-                for link in mitigation.get('links', []):
-                    if link in doc_text:
-                        doc_text = doc_text.replace(link, f'<link href="{link}">{link}</link>')
+                words = doc_text.split()
+                linked_text = []
+                for word in words:
+                    if word.startswith(('http://', 'https://')):
+                        linked_text.append(f'<link href="{word}">{word}</link>')
+                    else:
+                        linked_text.append(word)
+                doc_text = ' '.join(linked_text)
                 elements.append(Paragraph(doc_text, risk_body_style))
         else:
             elements.append(Paragraph("N/A", risk_body_style))
@@ -485,10 +497,16 @@ trusted Token Program"""
         if not has_no_hook and token_data.get('mitigations', {}).get('transfer_hook'):
             mitigation = token_data['mitigations']['transfer_hook']
             if mitigation['applied']:
+                # Create hyperlinked text from documentation
                 doc_text = mitigation['documentation']
-                for link in mitigation.get('links', []):
-                    if link in doc_text:
-                        doc_text = doc_text.replace(link, f'<link href="{link}">{link}</link>')
+                words = doc_text.split()
+                linked_text = []
+                for word in words:
+                    if word.startswith(('http://', 'https://')):
+                        linked_text.append(f'<link href="{word}">{word}</link>')
+                    else:
+                        linked_text.append(word)
+                doc_text = ' '.join(linked_text)
                 elements.append(Paragraph(doc_text, risk_body_style))
         else:
             elements.append(Paragraph("N/A", risk_body_style))
@@ -513,10 +531,16 @@ trusted Token Program"""
         if not has_no_confidential and token_data.get('mitigations', {}).get('confidential_transfers'):
             mitigation = token_data['mitigations']['confidential_transfers']
             if mitigation['applied']:
+                # Create hyperlinked text from documentation
                 doc_text = mitigation['documentation']
-                for link in mitigation.get('links', []):
-                    if link in doc_text:
-                        doc_text = doc_text.replace(link, f'<link href="{link}">{link}</link>')
+                words = doc_text.split()
+                linked_text = []
+                for word in words:
+                    if word.startswith(('http://', 'https://')):
+                        linked_text.append(f'<link href="{word}">{word}</link>')
+                    else:
+                        linked_text.append(word)
+                doc_text = ' '.join(linked_text)
                 elements.append(Paragraph(doc_text, risk_body_style))
         else:
             elements.append(Paragraph("N/A", risk_body_style))
@@ -542,10 +566,16 @@ trusted Token Program"""
         if not has_no_fees and token_data.get('mitigations', {}).get('transfer_fees'):
             mitigation = token_data['mitigations']['transfer_fees']
             if mitigation['applied']:
+                # Create hyperlinked text from documentation
                 doc_text = mitigation['documentation']
-                for link in mitigation.get('links', []):
-                    if link in doc_text:
-                        doc_text = doc_text.replace(link, f'<link href="{link}">{link}</link>')
+                words = doc_text.split()
+                linked_text = []
+                for word in words:
+                    if word.startswith(('http://', 'https://')):
+                        linked_text.append(f'<link href="{word}">{word}</link>')
+                    else:
+                        linked_text.append(word)
+                doc_text = ' '.join(linked_text)
                 elements.append(Paragraph(doc_text, risk_body_style))
         else:
             elements.append(Paragraph("N/A", risk_body_style))
