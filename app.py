@@ -41,6 +41,31 @@ st.markdown("""
     margin: 0 auto;
 }
 
+/* Title section */
+.title-section {
+    background: linear-gradient(135deg, #7047EB 0%, #9747FF 100%);
+    padding: 2.5rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(112, 71, 235, 0.15);
+}
+
+.title-section h1 {
+    color: white;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.5px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.title-section p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    margin: 0.5rem 0 0 0;
+    font-weight: 400;
+}
+
 /* Input fields */
 .stTextInput > div > div > input {
     background-color: white;
@@ -318,8 +343,9 @@ footer a:hover {
 
 # Page layout
 st.markdown("""
-    <div class="token-address">
-        <h1 style="font-size: 1.5rem; margin-bottom: 1rem; color: #1a1a1a;">SPL Token Security Analysis</h1>
+    <div class="title-section">
+        <h1>SPL Token Security Analysis</h1>
+        <p>Analyze and assess the security risks of any SPL token</p>
     </div>
 """, unsafe_allow_html=True)
 
