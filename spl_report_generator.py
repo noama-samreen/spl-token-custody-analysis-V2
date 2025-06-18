@@ -402,7 +402,11 @@ trusted Token Program"""
     # Freeze Authority Check
     freeze_value = token_data.get('freeze_authority', 'None')
     has_no_freeze = freeze_value == 'None' or freeze_value is None or freeze_value == ''
-    freeze_header = f"""{'1' if has_no_freeze else '5'} | No Freeze Authority {'- Pass' if has_no_freeze else '- Fail'}"""
+    # Check if mitigation is applied for freeze authority
+    freeze_mitigation_applied = (token_data.get('mitigations', {}).get('freeze_authority', {}).get('applied', False))
+    freeze_status = 'Pass' if (has_no_freeze or freeze_mitigation_applied) else 'Fail'
+    freeze_score = '1' if (has_no_freeze or freeze_mitigation_applied) else '5'
+    freeze_header = f"""{freeze_score} | No Freeze Authority - {freeze_status}"""
     elements.append(Paragraph(freeze_header, risk_subheader_style))
     
     freeze_description = """A missing freeze authority means that it is set to null and therefore a permanently revoked privilege. This means that account blacklisting is not possible."""
