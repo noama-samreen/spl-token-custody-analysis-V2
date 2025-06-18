@@ -284,7 +284,7 @@ st.markdown("""
     color: #28a745;
 }
 
-/* Adjust metric values for right column */
+/* Adjust metric values */
 [data-testid="stMetricValue"] {
     font-size: 1.2rem !important;
 }
@@ -295,6 +295,17 @@ st.markdown("""
     letter-spacing: 0.05em;
 }
 
+/* Remove default padding and margins */
+[data-testid="metric-container"] {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+div[data-testid="stVerticalBlock"] > div {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+}
+
 /* Address display style */
 .address-display {
     font-family: 'Courier New', monospace;
@@ -303,7 +314,14 @@ st.markdown("""
     background: #f8f9fa;
     padding: 0.5rem;
     border-radius: 6px;
-    margin-top: 0.25rem;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+}
+
+/* Authority section spacing */
+.stMetric {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
 }
 
 /* Raw data viewer */
