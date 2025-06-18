@@ -33,10 +33,15 @@ st.markdown("""
     color: white;
     border-radius: 8px;
     padding: 0.5rem 1rem;
-    margin: 1rem 0;
+    margin: 0.5rem 0;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 .stButton>button:hover {
     background-color: #5835c4;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
 }
 .json-output {
     background-color: #f8f9fa;
@@ -47,37 +52,49 @@ st.markdown("""
     font-size: 0.85rem;
 }
 .output-container {
-    margin: 2rem 0;
+    margin: 1rem 0;
     padding: 1rem;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 .header-container {
     text-align: center;
-    padding: 2rem 0;
+    padding: 1.5rem 0;
+    margin-bottom: 2rem;
+    background: linear-gradient(to right, #7047EB, #9747FF);
+    color: white;
+    border-radius: 8px;
 }
 .stProgress > div > div > div {
     background-color: #7047EB;
 }
 .metric-container {
-    background-color: #f8f9fa;
+    background-color: white;
     padding: 1rem;
     border-radius: 8px;
     margin: 0.5rem 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border: 1px solid #f0f0f0;
 }
 
-/* New styles for metrics */
+/* Improved metrics styling */
 [data-testid="stMetricValue"] {
     font-size: 1.8rem !important;
     font-weight: 600;
+    color: #1a1a1a;
 }
 [data-testid="stMetricLabel"] {
-    font-size: 1rem !important;
+    font-size: 0.9rem !important;
     font-weight: 500;
-    color: #555;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 [data-testid="stMetricDelta"] {
     font-size: 0.9rem !important;
+    font-weight: 500;
 }
 
 /* Style for long addresses */
@@ -86,17 +103,113 @@ st.markdown("""
     font-size: 0.85rem !important;
     word-break: break-all;
     line-height: 1.2;
+    color: #666;
 }
 
 /* Adjust overall container padding */
 .element-container {
-    padding: 0.5rem 0;
+    padding: 0.25rem 0;
 }
 
 /* Style JSON display */
 .stJson {
     font-size: 0.85rem !important;
     line-height: 1.4;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+/* Style expander */
+.streamlit-expanderHeader {
+    font-size: 1rem !important;
+    font-weight: 500;
+    color: #1a1a1a;
+    background-color: #f8f9fa;
+    border: none !important;
+    border-radius: 8px;
+    padding: 0.75rem 1rem !important;
+    margin: 0.5rem 0 !important;
+}
+.streamlit-expanderHeader:hover {
+    background-color: #f0f0f0;
+}
+.streamlit-expanderContent {
+    border: none !important;
+    padding: 1rem !important;
+    background-color: white;
+    border-radius: 0 0 8px 8px;
+}
+
+/* Style text inputs */
+.stTextInput>div>div>input {
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+}
+.stTextArea>div>div>textarea {
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    min-height: 100px;
+}
+
+/* Style status messages */
+.success-message {
+    padding: 0.75rem;
+    background-color: #e6f4ea;
+    color: #1e4620;
+    border-radius: 6px;
+    margin: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+}
+.warning-message {
+    padding: 0.75rem;
+    background-color: #fef7e6;
+    color: #8c6c1f;
+    border-radius: 6px;
+    margin: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+/* Style mitigation section */
+.mitigation-section {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.mitigation-header {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #7047EB;
+}
+.mitigation-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin: 0.5rem 0;
+}
+.status-applied {
+    background-color: #e6f4ea;
+    color: #1e4620;
+}
+.status-not-applied {
+    background-color: #fef7e6;
+    color: #8c6c1f;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -234,28 +347,30 @@ with tab1:
             # Display each failing check
             for check in failing_checks:
                 with st.expander(f"{check.replace('_', ' ').title()} Check - Failed"):
-                    # Initialize this check in session state if not exists
-                    if check not in st.session_state.mitigations:
-                        st.session_state.mitigations[check] = {
-                            'documentation': '',
-                            'applied': False,
-                            'links': []
-                        }
+                    st.markdown(f"""
+                        <div class="mitigation-section">
+                            <div class="mitigation-header">{check.replace('_', ' ').title()} Mitigation</div>
+                        </div>
+                    """, unsafe_allow_html=True)
                     
                     # Documentation input
+                    st.markdown("##### Mitigation Documentation")
                     documentation = st.text_area(
-                        "Mitigation Documentation",
+                        "",  # Empty label since we're using markdown above
                         key=f"{check}_documentation",
                         value=st.session_state.mitigations[check].get('documentation', ''),
-                        help="Enter the documentation for how this risk is mitigated"
+                        help="Enter the documentation for how this risk is mitigated",
+                        placeholder="Enter detailed documentation about how this risk is mitigated..."
                     )
                     
-                    # Links input (one per line)
+                    # Links input
+                    st.markdown("##### Reference Links")
                     links_text = st.text_area(
-                        "Reference Links (one per line)",
+                        "",  # Empty label since we're using markdown above
                         key=f"{check}_links",
                         value='\n'.join(st.session_state.mitigations[check].get('links', [])),
-                        help="Enter reference links, one per line"
+                        help="Enter reference links, one per line",
+                        placeholder="Enter reference links, one per line..."
                     )
                     
                     # Update session state with current input values
@@ -264,34 +379,43 @@ with tab1:
                         'links': [link for link in links_text.split('\n') if link.strip()]
                     })
                     
-                    # Apply Mitigation button
-                    if st.button("Apply Mitigation", key=f"apply_{check}"):
-                        if not documentation.strip():
-                            st.error("Please provide mitigation documentation before applying.")
-                        else:
-                            st.session_state.mitigations[check]['applied'] = True
-                            
-                            # Update the result dictionary with the mitigation details
-                            if 'mitigations' not in result_dict:
-                                result_dict['mitigations'] = {}
-                            result_dict['mitigations'][check] = st.session_state.mitigations[check]
-                            
-                            # Recalculate security review status
-                            has_unmitigated_risks = False
-                            for c in failing_checks:
-                                if not st.session_state.mitigations[c].get('applied', False):
-                                    has_unmitigated_risks = True
-                                    break
-                            
-                            st.session_state.analysis_results['security_review'] = 'FAILED' if has_unmitigated_risks else 'PASSED'
-                            st.success("Mitigation applied successfully!")
-                            st.rerun()
-                    
-                    # Show current status
+                    # Status display
                     if st.session_state.mitigations[check].get('applied', False):
-                        st.success("✅ Mitigation Applied")
+                        st.markdown("""
+                            <div class="mitigation-status status-applied">
+                                ✅ Mitigation Applied
+                            </div>
+                        """, unsafe_allow_html=True)
                     else:
-                        st.warning("❌ Mitigation Not Applied")
+                        st.markdown("""
+                            <div class="mitigation-status status-not-applied">
+                                ❌ Mitigation Not Applied
+                            </div>
+                        """, unsafe_allow_html=True)
+                    
+                    # Apply Mitigation button
+                    if not st.session_state.mitigations[check].get('applied', False):
+                        if st.button("Apply Mitigation", key=f"apply_{check}", use_container_width=True):
+                            if not documentation.strip():
+                                st.error("Please provide mitigation documentation before applying.")
+                            else:
+                                st.session_state.mitigations[check]['applied'] = True
+                                
+                                # Update the result dictionary with the mitigation details
+                                if 'mitigations' not in result_dict:
+                                    result_dict['mitigations'] = {}
+                                result_dict['mitigations'][check] = st.session_state.mitigations[check]
+                                
+                                # Recalculate security review status
+                                has_unmitigated_risks = False
+                                for c in failing_checks:
+                                    if not st.session_state.mitigations[c].get('applied', False):
+                                        has_unmitigated_risks = True
+                                        break
+                                
+                                st.session_state.analysis_results['security_review'] = 'FAILED' if has_unmitigated_risks else 'PASSED'
+                                st.success("✅ Mitigation applied successfully!")
+                                st.rerun()
         
         # Display authorities in columns
         col1, col2 = st.columns(2)
@@ -458,28 +582,30 @@ with tab2:
                     # Display mitigation inputs for each failing check
                     for check in failing_checks:
                         with st.expander(f"{check.replace('_', ' ').title()} Check - Failed"):
-                            # Initialize this check in session state if not exists
-                            if check not in st.session_state.batch_mitigations[i]:
-                                st.session_state.batch_mitigations[i][check] = {
-                                    'documentation': '',
-                                    'applied': False,
-                                    'links': []
-                                }
+                            st.markdown(f"""
+                                <div class="mitigation-section">
+                                    <div class="mitigation-header">{check.replace('_', ' ').title()} Mitigation</div>
+                                </div>
+                            """, unsafe_allow_html=True)
                             
                             # Documentation input
+                            st.markdown("##### Mitigation Documentation")
                             documentation = st.text_area(
-                                "Mitigation Documentation",
+                                "",  # Empty label since we're using markdown above
                                 key=f"batch_{i}_{check}_documentation",
                                 value=st.session_state.batch_mitigations[i][check].get('documentation', ''),
-                                help="Enter the documentation for how this risk is mitigated"
+                                help="Enter the documentation for how this risk is mitigated",
+                                placeholder="Enter detailed documentation about how this risk is mitigated..."
                             )
                             
-                            # Links input (one per line)
+                            # Links input
+                            st.markdown("##### Reference Links")
                             links_text = st.text_area(
-                                "Reference Links (one per line)",
+                                "",  # Empty label since we're using markdown above
                                 key=f"batch_{i}_{check}_links",
                                 value='\n'.join(st.session_state.batch_mitigations[i][check].get('links', [])),
-                                help="Enter reference links, one per line"
+                                help="Enter reference links, one per line",
+                                placeholder="Enter reference links, one per line..."
                             )
                             
                             # Update session state with current input values
@@ -488,34 +614,43 @@ with tab2:
                                 'links': [link for link in links_text.split('\n') if link.strip()]
                             })
                             
-                            # Apply Mitigation button
-                            if st.button("Apply Mitigation", key=f"batch_{i}_apply_{check}"):
-                                if not documentation.strip():
-                                    st.error("Please provide mitigation documentation before applying.")
-                                else:
-                                    st.session_state.batch_mitigations[i][check]['applied'] = True
-                                    
-                                    # Update the result dictionary with the mitigation details
-                                    if 'mitigations' not in result:
-                                        result['mitigations'] = {}
-                                    result['mitigations'][check] = st.session_state.batch_mitigations[i][check]
-                                    
-                                    # Recalculate security review status
-                                    has_unmitigated_risks = False
-                                    for c in failing_checks:
-                                        if not st.session_state.batch_mitigations[i][c].get('applied', False):
-                                            has_unmitigated_risks = True
-                                            break
-                                    
-                                    result['security_review'] = 'FAILED' if has_unmitigated_risks else 'PASSED'
-                                    st.success("Mitigation applied successfully!")
-                                    st.rerun()
-                            
-                            # Show current status
+                            # Status display
                             if st.session_state.batch_mitigations[i][check].get('applied', False):
-                                st.success("✅ Mitigation Applied")
+                                st.markdown("""
+                                    <div class="mitigation-status status-applied">
+                                        ✅ Mitigation Applied
+                                    </div>
+                                """, unsafe_allow_html=True)
                             else:
-                                st.warning("❌ Mitigation Not Applied")
+                                st.markdown("""
+                                    <div class="mitigation-status status-not-applied">
+                                        ❌ Mitigation Not Applied
+                                    </div>
+                                """, unsafe_allow_html=True)
+                            
+                            # Apply Mitigation button
+                            if not st.session_state.batch_mitigations[i][check].get('applied', False):
+                                if st.button("Apply Mitigation", key=f"batch_{i}_apply_{check}", use_container_width=True):
+                                    if not documentation.strip():
+                                        st.error("Please provide mitigation documentation before applying.")
+                                    else:
+                                        st.session_state.batch_mitigations[i][check]['applied'] = True
+                                        
+                                        # Update the result dictionary with the mitigation details
+                                        if 'mitigations' not in result:
+                                            result['mitigations'] = {}
+                                        result['mitigations'][check] = st.session_state.batch_mitigations[i][check]
+                                        
+                                        # Recalculate security review status
+                                        has_unmitigated_risks = False
+                                        for c in failing_checks:
+                                            if not st.session_state.batch_mitigations[i][c].get('applied', False):
+                                                has_unmitigated_risks = True
+                                                break
+                                        
+                                        result['security_review'] = 'FAILED' if has_unmitigated_risks else 'PASSED'
+                                        st.success("✅ Mitigation applied successfully!")
+                                        st.rerun()
                 
                 # Display Token-2022 features if applicable
                 if "Token 2022" in result.get('owner_program', ''):
