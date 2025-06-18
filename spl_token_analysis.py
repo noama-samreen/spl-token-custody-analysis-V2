@@ -157,7 +157,6 @@ class Token2022Extensions:
 class MitigationDetails:
     documentation: str
     applied: bool = False
-    links: List[str] = field(default_factory=list)
 
 @dataclass
 class TokenDetails:
@@ -208,8 +207,7 @@ class TokenDetails:
         result['mitigations'] = {
             check: {
                 'documentation': mitigation.documentation,
-                'applied': mitigation.applied,
-                'links': mitigation.links
+                'applied': mitigation.applied
             }
             for check, mitigation in self.mitigations.items()
         }
