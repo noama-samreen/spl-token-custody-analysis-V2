@@ -335,18 +335,12 @@ with tab1:
                                         </div>
                                     """, unsafe_allow_html=True)
                                     
-                                    # Documentation input with example and instructions
+                                    # Documentation input with concise instructions and example
                                     st.markdown("##### Mitigation Documentation")
                                     st.markdown("""
-                                        <div style='margin-bottom: 0.5rem; font-size: 0.9rem; color: #666;'>
-                                            To add links, simply include the full URL (starting with http:// or https://) in your text. 
-                                            The URL will automatically become clickable.
-                                        </div>
-                                        <div style='margin-bottom: 1rem; font-size: 0.9rem; background-color: #f8f9fa; padding: 0.5rem; border-radius: 4px;'>
-                                            Example:<br/>
-                                            Per asset issuer response: RENDER Mitigation 8.23.23 a privileged account is ⅔ multisig with hardware wallets. 
-                                            See https://example.com/documentation for details. Also the issuer confirmed that privileged account's keys are 
-                                            controlled by 'Contract Admin Management' which consists of ⅔ multisig (https://example.com/management).
+                                        <p style='color: #666; font-size: 0.9rem;'>To add links, include the full URL (http:// or https://) in your text.</p>
+                                        <div style='color: #666; font-size: 0.9rem; background-color: #f8f9fa; padding: 0.75rem; border-radius: 4px; margin-bottom: 0.75rem;'>
+                                            Example: Asset Issuer's Response: (https://example.com/response)
                                         </div>
                                     """, unsafe_allow_html=True)
                                     
@@ -354,8 +348,7 @@ with tab1:
                                         "",
                                         key=f"{check}_documentation",
                                         value=st.session_state.mitigations[check].get('documentation', ''),
-                                        help="Enter the documentation including any relevant URLs. URLs will automatically become clickable links.",
-                                        placeholder="Enter detailed documentation about how this risk is mitigated. Include full URLs (http://... or https://...) to make them clickable..."
+                                        placeholder="Enter mitigation documentation with any relevant URLs..."
                                     )
                                     
                                     # Update session state with current input values
@@ -363,13 +356,6 @@ with tab1:
                                         'documentation': documentation,
                                         'links': [url for url in documentation.split() if url.startswith(('http://', 'https://'))]
                                     })
-                                    
-                                    # If there are URLs in the text, show them as clickable links
-                                    urls = [url for url in documentation.split() if url.startswith(('http://', 'https://'))]
-                                    if urls:
-                                        st.markdown("<div style='margin-top: 0.5rem; font-size: 0.9rem; color: #666;'>Detected links:</div>", unsafe_allow_html=True)
-                                        for url in urls:
-                                            st.markdown(f"- [{url}]({url})")
                                     
                                     # Status and action section
                                     col1, col2 = st.columns([3, 1])
