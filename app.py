@@ -341,24 +341,14 @@ with tab1:
                                         "",
                                         key=f"{check}_documentation",
                                         value=st.session_state.mitigations[check].get('documentation', ''),
-                                        help="Enter the documentation for how this risk is mitigated",
-                                        placeholder="Enter detailed documentation about how this risk is mitigated..."
-                                    )
-                                    
-                                    # Links input
-                                    st.markdown("##### Reference Links")
-                                    links_text = st.text_area(
-                                        "",
-                                        key=f"{check}_links",
-                                        value='\n'.join(st.session_state.mitigations[check].get('links', [])),
-                                        help="Enter reference links, one per line",
-                                        placeholder="Enter reference links, one per line..."
+                                        help="Enter the documentation for how this risk is mitigated. You can include URLs which will be automatically converted to clickable links.",
+                                        placeholder="Enter detailed documentation about how this risk is mitigated. Include URLs to make them clickable..."
                                     )
                                     
                                     # Update session state with current input values
                                     st.session_state.mitigations[check].update({
                                         'documentation': documentation,
-                                        'links': [link for link in links_text.split('\n') if link.strip()]
+                                        'links': [url for url in documentation.split() if url.startswith(('http://', 'https://'))]
                                     })
                                     
                                     # Status and action section
