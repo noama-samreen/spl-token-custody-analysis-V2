@@ -234,54 +234,76 @@ st.markdown("""
 
 /* Metrics styling */
 .metric-container {
-    background: white;
+    background-color: white;
     border-radius: 12px;
     padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     border: 1px solid #f0f0f0;
+}
+
+.security-review-container {
+    background-color: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-left: 4px solid;
     height: 100%;
-    transition: all 0.2s ease;
 }
 
-.metric-container:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+.security-review-container.failed {
+    border-left-color: #dc3545;
 }
 
-.metric-container.status-failed {
-    border-left: 4px solid #dc3545;
+.security-review-container.passed {
+    border-left-color: #28a745;
 }
 
-.metric-container.status-passed {
-    border-left: 4px solid #28a745;
-}
-
-.metric-label {
-    font-size: 0.85rem;
+.security-review-label {
+    color: #6B7280;
+    font-size: 0.875rem;
     font-weight: 600;
-    color: #666;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 0.75rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
 }
 
-.metric-value {
-    font-size: 1.5rem;
+.security-review-value {
+    color: #111827;
+    font-size: 2.25rem;
     font-weight: 700;
-    color: #1a1a1a;
-    line-height: 1.2;
+    line-height: 1;
 }
 
-/* Authority addresses */
-[data-testid="stMetricValue"] div {
-    font-family: 'SF Mono', 'Roboto Mono', monospace;
-    font-size: 0.85rem !important;
+.security-review-value.failed {
+    color: #dc3545;
+}
+
+.security-review-value.passed {
+    color: #28a745;
+}
+
+/* Adjust metric values for right column */
+[data-testid="stMetricValue"] {
+    font-size: 1.2rem !important;
+}
+
+[data-testid="stMetricLabel"] {
+    font-size: 0.875rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Address display style */
+.address-display {
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem !important;
+    word-break: break-all;
     background: #f8f9fa;
     padding: 0.5rem;
     border-radius: 6px;
-    color: #444;
-    word-break: break-all;
-    line-height: 1.4;
+    margin-top: 0.25rem;
 }
 
 /* Raw data viewer */
@@ -540,37 +562,37 @@ with tab1:
                         result_dict['reviewer_name'] = reviewer_name
                         result_dict['confirmation_status'] = confirmation_status
                         
-                        # Display key metrics in columns
-                        col1, col2 = st.columns(2)
+                        # Create two columns with different widths (40:60 ratio)
+                        col1, col2 = st.columns([4, 6])
+                        
                         with col1:
-                            if result_dict.get('security_review') == 'FAILED':
-                                st.markdown("""
-                                    <div class="metric-container status-failed">
-                                        <div class="metric-label">Security Review</div>
-                                        <div class="metric-value">FAILED</div>
-                                    </div>
-                                """, unsafe_allow_html=True)
-                            else:
-                                st.markdown("""
-                                    <div class="metric-container status-passed">
-                                        <div class="metric-label">Security Review</div>
-                                        <div class="metric-value">PASSED</div>
-                                    </div>
-                                """, unsafe_allow_html=True)
-                        with col2:
+                            # Large security review section
+                            security_review = result_dict.get('security_review', 'UNKNOWN')
                             st.markdown(f"""
-                                <div class="metric-container">
-                                    <div class="metric-label">Token Program</div>
-                                    <div class="metric-value">{"Token-2022" if "Token 2022" in result_dict.get('owner_program', '') else "SPL Token"}</div>
+                                <div class="security-review-container {'failed' if security_review == 'FAILED' else 'passed'}">
+                                    <div class="security-review-label">SECURITY REVIEW</div>
+                                    <div class="security-review-value {'failed' if security_review == 'FAILED' else 'passed'}">{security_review}</div>
                                 </div>
                             """, unsafe_allow_html=True)
                         
-                        # Display authorities in columns
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.metric("Update Authority", result_dict.get('update_authority'))
                         with col2:
-                            st.metric("Freeze Authority", result_dict.get('freeze_authority') or 'None')
+                            # Token Program (thin)
+                            st.metric(
+                                "TOKEN PROGRAM",
+                                "Token-2022" if "Token 2022" in result_dict.get('owner_program', '') else "SPL Token"
+                            )
+                            
+                            # Freeze Authority (thin)
+                            freeze_auth = result_dict.get('freeze_authority', 'None')
+                            st.metric("FREEZE AUTHORITY", "None" if not freeze_auth else "Present")
+                            if freeze_auth and freeze_auth != 'None':
+                                st.markdown(f'<div class="address-display">{freeze_auth}</div>', unsafe_allow_html=True)
+                            
+                            # Update Authority (thin)
+                            update_auth = result_dict.get('update_authority', 'None')
+                            st.metric("UPDATE AUTHORITY", "None" if not update_auth else "Present")
+                            if update_auth and update_auth != 'None':
+                                st.markdown(f'<div class="address-display">{update_auth}</div>', unsafe_allow_html=True)
                         
                         # Display pump.fun specific metrics if applicable
                         if "Pump.Fun Mint Authority" in str(result_dict.get('update_authority', '')):
