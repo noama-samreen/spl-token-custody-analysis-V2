@@ -255,8 +255,32 @@ trusted Token Program"""
     if security_review in ['N/A', None, '']:
         security_review = 'UNKNOWN'
     
-    # Determine risk scores based on security review
-    risk_score = 1 if security_review == 'PASSED' else 5
+    # Determine risk scores based on security review and mitigations
+    mitigations = token_data.get('mitigations', {})
+    all_mitigations_applied = True
+    
+    # Check if there are any failing checks that need mitigation
+    failing_checks = []
+    if token_data.get('freeze_authority'):
+        failing_checks.append('freeze_authority')
+    if "Token 2022" in token_data.get('owner_program', ''):
+        if token_data.get('permanent_delegate'):
+            failing_checks.append('permanent_delegate')
+        if token_data.get('transfer_hook'):
+            failing_checks.append('transfer_hook')
+        if token_data.get('confidential_transfers'):
+            failing_checks.append('confidential_transfers')
+        if token_data.get('transaction_fees') not in [None, 0, '0', 'None', '']:
+            failing_checks.append('transfer_fees')
+    
+    # Check if all failing checks have applied mitigations
+    for check in failing_checks:
+        if check not in mitigations or not mitigations[check].get('applied', False):
+            all_mitigations_applied = False
+            break
+    
+    # Set risk score based on mitigations
+    risk_score = 1 if (security_review == 'PASSED' or all_mitigations_applied) else 5
     
     recommendation = (
         f"<b>{token_name} ({token_symbol}) "
