@@ -142,6 +142,53 @@ with tab1:
                     st.error(result)
                 else:
                     st.session_state.analysis_results = result.to_dict()
+                    
+                    # Initialize mitigations in session state if not exists
+                    if 'mitigations' not in st.session_state:
+                        st.session_state.mitigations = {}
+                    
+                    # Add a reanalyze button after mitigation inputs
+                    if st.button("Apply Mitigations and Reanalyze", key="reanalyze_single"):
+                        # Update the token details with mitigation information
+                        for check, mitigation in st.session_state.mitigations.items():
+                            if 'mitigations' not in st.session_state.analysis_results:
+                                st.session_state.analysis_results['mitigations'] = {}
+                            st.session_state.analysis_results['mitigations'][check] = {
+                                'documentation': mitigation['documentation'],
+                                'applied': mitigation['applied'],
+                                'links': mitigation['links']
+                            }
+                        
+                        # Recalculate security review status
+                        has_unmitigated_risks = False
+                        if st.session_state.analysis_results.get('freeze_authority'):
+                            check = 'freeze_authority'
+                            if check not in st.session_state.mitigations or not st.session_state.mitigations[check]['applied']:
+                                has_unmitigated_risks = True
+                        
+                        if "Token 2022" in st.session_state.analysis_results.get('owner_program', ''):
+                            if (st.session_state.analysis_results.get('permanent_delegate') and 
+                                ('permanent_delegate' not in st.session_state.mitigations or 
+                                not st.session_state.mitigations['permanent_delegate']['applied'])):
+                                has_unmitigated_risks = True
+                            
+                            if (st.session_state.analysis_results.get('transfer_hook') and 
+                                ('transfer_hook' not in st.session_state.mitigations or 
+                                not st.session_state.mitigations['transfer_hook']['applied'])):
+                                has_unmitigated_risks = True
+                            
+                            if (st.session_state.analysis_results.get('confidential_transfers') and 
+                                ('confidential_transfers' not in st.session_state.mitigations or 
+                                not st.session_state.mitigations['confidential_transfers']['applied'])):
+                                has_unmitigated_risks = True
+                            
+                            if (st.session_state.analysis_results.get('transaction_fees') not in [None, 0] and 
+                                ('transfer_fees' not in st.session_state.mitigations or 
+                                not st.session_state.mitigations['transfer_fees']['applied'])):
+                                has_unmitigated_risks = True
+                        
+                        st.session_state.analysis_results['security_review'] = 'FAILED' if has_unmitigated_risks else 'PASSED'
+                        st.rerun()
             except Exception as e:
                 st.error(f"Error analyzing token: {str(e)}")
     
@@ -161,10 +208,6 @@ with tab1:
         
         # Add mitigation inputs for failing checks
         st.subheader("Security Checks & Mitigations")
-        
-        # Initialize session state for mitigations if not exists
-        if 'mitigations' not in st.session_state:
-            st.session_state.mitigations = {}
         
         # Check for failing conditions and display mitigation inputs
         failing_checks = []
@@ -187,14 +230,6 @@ with tab1:
         # Display mitigation inputs for each failing check
         for check in failing_checks:
             with st.expander(f"{check.replace('_', ' ').title()} Check - Failed"):
-                # Initialize session state for this check if not exists
-                if check not in st.session_state.mitigations:
-                    st.session_state.mitigations[check] = {
-                        'documentation': '',
-                        'applied': False,
-                        'links': []
-                    }
-                
                 # Documentation input
                 st.text_area(
                     "Mitigation Documentation",
@@ -387,19 +422,11 @@ with tab2:
                     # Display mitigation inputs for each failing check
                     for check in failing_checks:
                         with st.expander(f"{check.replace('_', ' ').title()} Check - Failed"):
-                            # Initialize session state for this check if not exists
-                            if check not in st.session_state.batch_mitigations[i]:
-                                st.session_state.batch_mitigations[i][check] = {
-                                    'documentation': '',
-                                    'applied': False,
-                                    'links': []
-                                }
-                            
                             # Documentation input
                             st.text_area(
                                 "Mitigation Documentation",
                                 key=f"batch_{i}_{check}_documentation",
-                                value=st.session_state.batch_mitigations[i][check]['documentation'],
+                                value=st.session_state.batch_mitigations[i].get(check, {}).get('documentation', ''),
                                 help="Enter the documentation for how this risk is mitigated"
                             )
                             
@@ -407,7 +434,7 @@ with tab2:
                             st.checkbox(
                                 "Mitigation Applied",
                                 key=f"batch_{i}_{check}_applied",
-                                value=st.session_state.batch_mitigations[i][check]['applied'],
+                                value=st.session_state.batch_mitigations[i].get(check, {}).get('applied', False),
                                 help="Check if the mitigation has been applied"
                             )
                             
@@ -415,7 +442,7 @@ with tab2:
                             st.text_area(
                                 "Reference Links (one per line)",
                                 key=f"batch_{i}_{check}_links",
-                                value='\n'.join(st.session_state.batch_mitigations[i][check]['links']),
+                                value='\n'.join(st.session_state.batch_mitigations[i].get(check, {}).get('links', [])),
                                 help="Enter reference links, one per line"
                             )
                             
@@ -425,11 +452,46 @@ with tab2:
                                 'applied': st.session_state[f"batch_{i}_{check}_applied"],
                                 'links': [link for link in st.session_state[f"batch_{i}_{check}_links"].split('\n') if link.strip()]
                             }
-                            
-                            # Update the result dictionary with the mitigation details
+                        
+                        # Add reanalyze button for this token
+                        if st.button("Apply Mitigations and Reanalyze", key=f"reanalyze_batch_{i}"):
+                            # Update the token details with mitigation information
                             if 'mitigations' not in result:
                                 result['mitigations'] = {}
-                            result['mitigations'][check] = st.session_state.batch_mitigations[i][check]
+                            
+                            for check in failing_checks:
+                                result['mitigations'][check] = st.session_state.batch_mitigations[i][check]
+                            
+                            # Recalculate security review status
+                            has_unmitigated_risks = False
+                            if result.get('freeze_authority'):
+                                check = 'freeze_authority'
+                                if check not in st.session_state.batch_mitigations[i] or not st.session_state.batch_mitigations[i][check]['applied']:
+                                    has_unmitigated_risks = True
+                            
+                            if "Token 2022" in result.get('owner_program', ''):
+                                if (result.get('permanent_delegate') and 
+                                    ('permanent_delegate' not in st.session_state.batch_mitigations[i] or 
+                                    not st.session_state.batch_mitigations[i]['permanent_delegate']['applied'])):
+                                    has_unmitigated_risks = True
+                                
+                                if (result.get('transfer_hook') and 
+                                    ('transfer_hook' not in st.session_state.batch_mitigations[i] or 
+                                    not st.session_state.batch_mitigations[i]['transfer_hook']['applied'])):
+                                    has_unmitigated_risks = True
+                                
+                                if (result.get('confidential_transfers') and 
+                                    ('confidential_transfers' not in st.session_state.batch_mitigations[i] or 
+                                    not st.session_state.batch_mitigations[i]['confidential_transfers']['applied'])):
+                                    has_unmitigated_risks = True
+                                
+                                if (result.get('transaction_fees') not in [None, 0] and 
+                                    ('transfer_fees' not in st.session_state.batch_mitigations[i] or 
+                                    not st.session_state.batch_mitigations[i]['transfer_fees']['applied'])):
+                                    has_unmitigated_risks = True
+                            
+                            result['security_review'] = 'FAILED' if has_unmitigated_risks else 'PASSED'
+                            st.rerun()
                 
                 # Display Token-2022 features if applicable
                 if "Token 2022" in result.get('owner_program', ''):
