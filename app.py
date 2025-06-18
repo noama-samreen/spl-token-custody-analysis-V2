@@ -584,13 +584,13 @@ with tab1:
                             
                             # Freeze Authority (thin)
                             freeze_auth = result_dict.get('freeze_authority', 'None')
-                            st.metric("FREEZE AUTHORITY", "None" if not freeze_auth else "Present")
+                            st.metric("FREEZE AUTHORITY", "None" if not freeze_auth or freeze_auth == 'None' else "")
                             if freeze_auth and freeze_auth != 'None':
                                 st.markdown(f'<div class="address-display">{freeze_auth}</div>', unsafe_allow_html=True)
                             
                             # Update Authority (thin)
                             update_auth = result_dict.get('update_authority', 'None')
-                            st.metric("UPDATE AUTHORITY", "None" if not update_auth else "Present")
+                            st.metric("UPDATE AUTHORITY", "None" if not update_auth or update_auth == 'None' else "")
                             if update_auth and update_auth != 'None':
                                 st.markdown(f'<div class="address-display">{update_auth}</div>', unsafe_allow_html=True)
                         
