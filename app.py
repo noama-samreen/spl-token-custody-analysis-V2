@@ -372,11 +372,11 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Tabs
+# Create tabs
 tab1, tab2 = st.tabs(["Single Token", "Batch Process"])
 
 with tab1:
-    # Token input and reviewer info
+    # Single token analysis UI
     token_address = st.text_input("Token Address", value=st.session_state.token_address if st.session_state.token_address else "", placeholder="Enter SPL token address...")
 
     col1, col2 = st.columns(2)
@@ -630,11 +630,120 @@ with tab1:
                 st.error(f"Error analyzing token: {str(e)}")
 
 with tab2:
-    st.markdown("Batch processing functionality coming soon...")
+    # Batch processing UI
+    st.markdown("### Batch Token Analysis")
+    st.markdown("Upload a file containing multiple token addresses to analyze them in batch.")
+    
+    # Reviewer information
+    col1, col2 = st.columns(2)
+    with col1:
+        batch_reviewer_name = st.text_input("Reviewer Name", value="Noama Samreen", key="batch_reviewer_name")
+    with col2:
+        batch_confirmation_status = st.radio(
+            "Conflicts Certification Status",
+            options=["Confirmed", "Denied"],
+            horizontal=True,
+            key="batch_confirmation_status"
+        )
+
+    # File upload
+    uploaded_file = st.file_uploader(
+        "Upload a text file with token addresses",
+        type="txt",
+        help="File should contain one Solana token address per line"
+    )
+
+    if uploaded_file:
+        # Read addresses from file
+        addresses = [line.decode().strip() for line in uploaded_file if line.decode().strip()]
+        st.info(f"Found {len(addresses)} addresses in file")
+
+        if st.button("Process Batch", use_container_width=True):
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+
+            async def process_batch():
+                async with aiohttp.ClientSession() as session:
+                    results = await process_tokens_concurrently(addresses, session)
+                    for i, _ in enumerate(results, 1):
+                        progress = i / len(addresses)
+                        progress_bar.progress(progress)
+                        status_text.text(f"Processed {i}/{len(addresses)} tokens")
+                    return results
+
+            try:
+                results = asyncio.run(process_batch())
+                # Add reviewer information to each result
+                for result in results:
+                    if isinstance(result, dict) and result.get('status') == 'success':
+                        result['reviewer_name'] = batch_reviewer_name
+                        result['confirmation_status'] = batch_confirmation_status
+                st.session_state.batch_results = results
+                st.success(f"Successfully processed {len(results)} tokens")
+
+                # Display results
+                if st.session_state.batch_results:
+                    # Download options
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        # JSON download
+                        st.download_button(
+                            "Download JSON",
+                            data=json.dumps(results, indent=2),
+                            file_name="token_analysis_results.json",
+                            mime="application/json"
+                        )
+                    
+                    with col2:
+                        # CSV download
+                        csv_data = "address,name,symbol,owner_program,update_authority,freeze_authority,security_review\n"
+                        for r in results:
+                            if isinstance(r, dict) and r.get('status') == 'success':
+                                csv_data += f"{r.get('address', '')},{r.get('name', 'N/A')},{r.get('symbol', 'N/A')},"
+                                csv_data += f"{r.get('owner_program', 'N/A')},{r.get('update_authority', 'None')},"
+                                csv_data += f"{r.get('freeze_authority', 'None')},{r.get('security_review', 'N/A')}\n"
+                        
+                        st.download_button(
+                            "Download CSV",
+                            data=csv_data,
+                            file_name="token_analysis_results.csv",
+                            mime="text/csv"
+                        )
+                    
+                    with col3:
+                        # PDF download
+                        with tempfile.TemporaryDirectory() as temp_dir:
+                            zip_path = os.path.join(temp_dir, "token_analysis_pdfs.zip")
+                            with zipfile.ZipFile(zip_path, 'w') as zipf:
+                                for result in results:
+                                    if isinstance(result, dict) and result.get('status') == 'success':
+                                        pdf_path = create_pdf(result, temp_dir)
+                                        zipf.write(pdf_path, os.path.basename(pdf_path))
+                            
+                            with open(zip_path, "rb") as zip_file:
+                                st.download_button(
+                                    "Download PDFs",
+                                    data=zip_file.read(),
+                                    file_name="token_analysis_pdfs.zip",
+                                    mime="application/zip"
+                                )
+                    
+                    # Display results in expandable sections
+                    st.markdown("### Analysis Results")
+                    for i, result in enumerate(results):
+                        if isinstance(result, dict):
+                            with st.expander(f"Token {i+1}: {result.get('address', 'Unknown')}"):
+                                st.json(result)
+
+            except Exception as e:
+                st.error(f"Error during batch processing: {str(e)}")
 
 # Footer
+st.markdown("---")
 st.markdown("""
-<footer>
-    <p>Made by <a href="https://github.com/noamasamreen" target="_blank">Noama Samreen</a> | <a href="https://github.com/noamasamreen/spl-token-custody-risk-analyzer" target="_blank">GitHub</a></p>
-</footer>
+<div style='text-align: center; color: #666;'>
+    Made by <a href="https://github.com/noamasamreen" target="_blank">Noama Samreen</a> | 
+    <a href="https://github.com/noamasamreen/spl-token-custody-risk-analyzer" target="_blank">GitHub</a>
+</div>
 """, unsafe_allow_html=True) 
