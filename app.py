@@ -7,7 +7,8 @@ import os
 import tempfile
 import zipfile
 from datetime import datetime
-from spl_token_analysis import get_token_details_async, create_pdf
+from spl_token_analysis import get_token_details_async
+from spl_report_generator import create_pdf
 
 # Initialize session state if not already done
 if 'analysis_results' not in st.session_state:
