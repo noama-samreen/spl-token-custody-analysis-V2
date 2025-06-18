@@ -331,7 +331,6 @@ with tab1:
                                     st.markdown(f"""
                                         <div class="mitigation-section">
                                             <div class="mitigation-header">{check.replace('_', ' ').title()} Mitigation</div>
-                                            <p class="mitigation-description">Document and apply mitigation for this security check</p>
                                         </div>
                                     """, unsafe_allow_html=True)
                                     
