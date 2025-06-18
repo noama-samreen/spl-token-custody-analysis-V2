@@ -266,18 +266,18 @@ if st.button("Analyze Token", use_container_width=True):
                     failing_checks = []
                     
                     # Check freeze authority
-                    if result.get('freeze_authority'):
+                    if result.freeze_authority:
                         failing_checks.append('freeze_authority')
                     
                     # Check Token-2022 specific features
-                    if "Token 2022" in result.get('owner_program', ''):
-                        if result.get('permanent_delegate'):
+                    if "Token 2022" in result.owner_program:
+                        if result.permanent_delegate:
                             failing_checks.append('permanent_delegate')
-                        if result.get('transfer_hook'):
+                        if result.transfer_hook:
                             failing_checks.append('transfer_hook')
-                        if result.get('confidential_transfers'):
+                        if result.confidential_transfers:
                             failing_checks.append('confidential_transfers')
-                        if result.get('transaction_fees') not in [None, 0]:
+                        if result.transaction_fees not in [None, 0]:
                             failing_checks.append('transfer_fees')
                     
                     # Initialize mitigations for each failing check
@@ -317,46 +317,46 @@ if st.button("Analyze Token", use_container_width=True):
                     st.markdown(f"""
                         <div class="metric-container">
                             <div class="metric-label">Token Program</div>
-                            <div class="metric-value">{"Token-2022" if "Token 2022" in result_dict.get('owner_program', '') else "SPL Token"}</div>
+                            <div class="metric-value">{"Token-2022" if "Token 2022" in result.owner_program else "SPL Token"}</div>
                         </div>
                     """, unsafe_allow_html=True)
                 
                 # Display authorities in columns
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.metric("Update Authority", result_dict.get('update_authority', 'None'))
+                    st.metric("Update Authority", result.update_authority)
                 with col2:
-                    st.metric("Freeze Authority", result_dict.get('freeze_authority', 'None'))
+                    st.metric("Freeze Authority", result.freeze_authority or 'None')
                 
                 # Display pump.fun specific metrics if applicable
-                if "Pump.Fun Mint Authority" in str(result_dict.get('update_authority', '')):
+                if "Pump.Fun Mint Authority" in str(result.update_authority):
                     col1, col2 = st.columns(2)
                     with col1:
-                        st.metric("Genuine Pump Fun Token", "Yes" if result_dict.get('is_genuine_pump_fun_token', False) else "No")
+                        st.metric("Genuine Pump Fun Token", "Yes" if result.is_genuine_pump_fun_token else "No")
                     with col2:
-                        st.metric("Graduated to Raydium", "Yes" if result_dict.get('token_graduated_to_raydium', False) else "No")
+                        st.metric("Graduated to Raydium", "Yes" if result.token_graduated_to_raydium else "No")
                     
-                    if result_dict.get('interacted_with'):
-                        st.metric("Interaction Type", result_dict.get('interacted_with', 'None'))
+                    if result.interacted_with:
+                        st.metric("Interaction Type", result.interacted_with)
                         
-                        if result_dict.get('interacting_account'):
+                        if result.interacting_account:
                             with st.expander("Interaction Details"):
                                 st.text("Interacting Account")
-                                st.code(result_dict.get('interacting_account'))
-                                if result_dict.get('interaction_signature'):
+                                st.code(result.interacting_account)
+                                if result.interaction_signature:
                                     st.text("Transaction Signature")
-                                    st.code(result_dict.get('interaction_signature'))
+                                    st.code(result.interaction_signature)
                 
                 # If token is Token-2022, display extension features
-                if "Token 2022" in result_dict.get('owner_program', ''):
+                if "Token 2022" in result.owner_program:
                     st.subheader("Token-2022 Features")
                     col1, col2 = st.columns(2)
                     with col1:
-                        st.metric("Permanent Delegate", result_dict.get('permanent_delegate', 'None'))
-                        st.metric("Transfer Hook", result_dict.get('transfer_hook', 'None'))
+                        st.metric("Permanent Delegate", result.permanent_delegate or 'None')
+                        st.metric("Transfer Hook", result.transfer_hook or 'None')
                     with col2:
-                        st.metric("Transaction Fees", result_dict.get('transaction_fees', 'None'))
-                        st.metric("Confidential Transfers", result_dict.get('confidential_transfers', 'None'))
+                        st.metric("Transaction Fees", result.transaction_fees or 'None')
+                        st.metric("Confidential Transfers", result.confidential_transfers or 'None')
                 
                 # Display full results
                 with st.expander("View Raw Data"):
@@ -386,10 +386,8 @@ if st.button("Analyze Token", use_container_width=True):
             st.error(f"Error analyzing token: {str(e)}")
 
 # Footer
-st.markdown("---")
 st.markdown("""
-<div style='text-align: center; color: #666;'>
-    Noama Samreen | 
-    <a href='https://github.com/noama-samreen/spl-token-custody-analysis' target='_blank'>GitHub</a>
-</div>
+<footer>
+    <p>Made by <a href="https://github.com/noamasamreen" target="_blank">Noama Samreen</a> | <a href="https://github.com/noamasamreen/spl-token-custody-risk-analyzer" target="_blank">GitHub</a></p>
+</footer>
 """, unsafe_allow_html=True) 
