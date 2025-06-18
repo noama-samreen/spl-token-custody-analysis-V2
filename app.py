@@ -244,72 +244,72 @@ with tab1:
                                         <p class="mitigation-description">Document and apply mitigation for this security check</p>
                                     </div>
                                 """, unsafe_allow_html=True)
-                                    
-                                    # Documentation input
-                                    st.markdown("##### Mitigation Documentation")
-                                    documentation = st.text_area(
-                                        "",
-                                        key=f"{check}_documentation",
-                                        value=st.session_state.mitigations[check].get('documentation', ''),
-                                        help="Enter the documentation for how this risk is mitigated",
-                                        placeholder="Enter detailed documentation about how this risk is mitigated..."
-                                    )
-                                    
-                                    # Links input
-                                    st.markdown("##### Reference Links")
-                                    links_text = st.text_area(
-                                        "",
-                                        key=f"{check}_links",
-                                        value='\n'.join(st.session_state.mitigations[check].get('links', [])),
-                                        help="Enter reference links, one per line",
-                                        placeholder="Enter reference links, one per line..."
-                                    )
-                                    
-                                    # Update session state with current input values
-                                    st.session_state.mitigations[check].update({
-                                        'documentation': documentation,
-                                        'links': [link for link in links_text.split('\n') if link.strip()]
-                                    })
-                                    
-                                    # Status and action section
-                                    col1, col2 = st.columns([3, 1])
-                                    with col1:
-                                        if st.session_state.mitigations[check].get('applied', False):
-                                            st.markdown("""
-                                                <div class="mitigation-status status-applied">
-                                                    ✅ Mitigation Applied
-                                                </div>
-                                            """, unsafe_allow_html=True)
-                                        else:
-                                            st.markdown("""
-                                                <div class="mitigation-status status-not-applied">
-                                                    ❌ Mitigation Not Applied
-                                                </div>
-                                            """, unsafe_allow_html=True)
-                                    
-                                    with col2:
-                                        if not st.session_state.mitigations[check].get('applied', False):
-                                            if st.button("Apply Mitigation", key=f"apply_{check}", use_container_width=True):
-                                                if not documentation.strip():
-                                                    st.error("Please provide mitigation documentation before applying.")
-                                                else:
-                                                    st.session_state.mitigations[check]['applied'] = True
-                                                    
-                                                    # Update the result dictionary with the mitigation details
-                                                    if 'mitigations' not in result_dict:
-                                                        result_dict['mitigations'] = {}
-                                                    result_dict['mitigations'][check] = st.session_state.mitigations[check]
-                                                    
-                                                    # Recalculate security review status
-                                                    has_unmitigated_risks = False
-                                                    for c in failing_checks:
-                                                        if not st.session_state.mitigations[c].get('applied', False):
-                                                            has_unmitigated_risks = True
-                                                            break
-                                                    
-                                                    st.session_state.analysis_results['security_review'] = 'FAILED' if has_unmitigated_risks else 'PASSED'
-                                                    st.success("✅ Mitigation applied successfully!")
-                                                    st.rerun()
+                                
+                                # Documentation input
+                                st.markdown("##### Mitigation Documentation")
+                                documentation = st.text_area(
+                                    "",
+                                    key=f"{check}_documentation",
+                                    value=st.session_state.mitigations[check].get('documentation', ''),
+                                    help="Enter the documentation for how this risk is mitigated",
+                                    placeholder="Enter detailed documentation about how this risk is mitigated..."
+                                )
+                                
+                                # Links input
+                                st.markdown("##### Reference Links")
+                                links_text = st.text_area(
+                                    "",
+                                    key=f"{check}_links",
+                                    value='\n'.join(st.session_state.mitigations[check].get('links', [])),
+                                    help="Enter reference links, one per line",
+                                    placeholder="Enter reference links, one per line..."
+                                )
+                                
+                                # Update session state with current input values
+                                st.session_state.mitigations[check].update({
+                                    'documentation': documentation,
+                                    'links': [link for link in links_text.split('\n') if link.strip()]
+                                })
+                                
+                                # Status and action section
+                                col1, col2 = st.columns([3, 1])
+                                with col1:
+                                    if st.session_state.mitigations[check].get('applied', False):
+                                        st.markdown("""
+                                            <div class="mitigation-status status-applied">
+                                                ✅ Mitigation Applied
+                                            </div>
+                                        """, unsafe_allow_html=True)
+                                    else:
+                                        st.markdown("""
+                                            <div class="mitigation-status status-not-applied">
+                                                ❌ Mitigation Not Applied
+                                            </div>
+                                        """, unsafe_allow_html=True)
+                                
+                                with col2:
+                                    if not st.session_state.mitigations[check].get('applied', False):
+                                        if st.button("Apply Mitigation", key=f"apply_{check}", use_container_width=True):
+                                            if not documentation.strip():
+                                                st.error("Please provide mitigation documentation before applying.")
+                                            else:
+                                                st.session_state.mitigations[check]['applied'] = True
+                                                
+                                                # Update the result dictionary with the mitigation details
+                                                if 'mitigations' not in result_dict:
+                                                    result_dict['mitigations'] = {}
+                                                result_dict['mitigations'][check] = st.session_state.mitigations[check]
+                                                
+                                                # Recalculate security review status
+                                                has_unmitigated_risks = False
+                                                for c in failing_checks:
+                                                    if not st.session_state.mitigations[c].get('applied', False):
+                                                        has_unmitigated_risks = True
+                                                        break
+                                                
+                                                st.session_state.analysis_results['security_review'] = 'FAILED' if has_unmitigated_risks else 'PASSED'
+                                                st.success("✅ Mitigation applied successfully!")
+                                                st.rerun()
                 
                 # Add a reanalyze button after mitigation inputs
                 if st.button("Apply Mitigations and Reanalyze", key="reanalyze_single"):
