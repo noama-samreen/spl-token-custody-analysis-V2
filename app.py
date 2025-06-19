@@ -312,6 +312,38 @@ with tab1:
                             if update_auth and update_auth != 'None':
                                 st.markdown(f'<div class="address-display">{update_auth}</div>', unsafe_allow_html=True)
                             st.markdown('</div>', unsafe_allow_html=True)
+
+                            # If token is Token-2022, display extension features
+                            if "Token 2022" in result_dict.get('owner_program', ''):
+                                # Permanent Delegate
+                                st.markdown('<div class="authority-section">', unsafe_allow_html=True)
+                                delegate = result_dict.get('permanent_delegate', 'None')
+                                st.metric("PERMANENT DELEGATE", "None" if not delegate or delegate == 'None' else "")
+                                if delegate and delegate != 'None':
+                                    st.markdown(f'<div class="address-display">{delegate}</div>', unsafe_allow_html=True)
+                                st.markdown('</div>', unsafe_allow_html=True)
+
+                                # Transfer Hook
+                                st.markdown('<div class="authority-section">', unsafe_allow_html=True)
+                                hook = result_dict.get('transfer_hook', 'None')
+                                st.metric("TRANSFER HOOK", "None" if not hook or hook == 'None' else "")
+                                if hook and hook != 'None':
+                                    st.markdown(f'<div class="address-display">{hook}</div>', unsafe_allow_html=True)
+                                st.markdown('</div>', unsafe_allow_html=True)
+
+                                # Confidential Transfers
+                                st.markdown('<div class="authority-section">', unsafe_allow_html=True)
+                                confidential = result_dict.get('confidential_transfers', 'None')
+                                st.metric("CONFIDENTIAL TRANSFERS", "None" if not confidential or confidential == 'None' else "")
+                                if confidential and confidential != 'None':
+                                    st.markdown(f'<div class="address-display">{confidential}</div>', unsafe_allow_html=True)
+                                st.markdown('</div>', unsafe_allow_html=True)
+
+                                # Transaction Fees
+                                st.markdown('<div class="authority-section">', unsafe_allow_html=True)
+                                fees = result_dict.get('transaction_fees', 'None')
+                                st.metric("TRANSACTION FEES", "None" if not fees or fees in ['None', 0] else str(fees))
+                                st.markdown('</div>', unsafe_allow_html=True)
                         
                         # Add spacing between sections
                         st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
@@ -408,17 +440,6 @@ with tab1:
                                             if result_dict.get('interaction_signature'):
                                                 st.text("Transaction Signature")
                                                 st.code(result_dict.get('interaction_signature'))
-                        
-                        # If token is Token-2022, display extension features
-                        if "Token 2022" in result_dict.get('owner_program', ''):
-                            st.subheader("Token-2022 Features")
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                st.metric("Permanent Delegate", result_dict.get('permanent_delegate') or 'None')
-                                st.metric("Transfer Hook", result_dict.get('transfer_hook') or 'None')
-                            with col2:
-                                st.metric("Transaction Fees", result_dict.get('transaction_fees') or 'None')
-                                st.metric("Confidential Transfers", result_dict.get('confidential_transfers') or 'None')
                         
                         # Display full results
                         with st.expander("View Raw Data"):
