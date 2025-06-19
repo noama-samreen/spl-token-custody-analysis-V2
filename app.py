@@ -300,21 +300,17 @@ with tab1:
                             # Freeze Authority (thin)
                             st.markdown('<div class="authority-section">', unsafe_allow_html=True)
                             freeze_auth = result_dict.get('freeze_authority', 'None')
-                            if freeze_auth and freeze_auth != 'None':
+                            if freeze_auth:
                                 st.metric("FREEZE AUTHORITY", "")
                                 st.markdown(f'<div class="address-display">{freeze_auth}</div>', unsafe_allow_html=True)
-                            else:
-                                st.metric("FREEZE AUTHORITY", "None")
                             st.markdown('</div>', unsafe_allow_html=True)
                             
                             # Update Authority (thin)
                             st.markdown('<div class="authority-section">', unsafe_allow_html=True)
                             update_auth = result_dict.get('update_authority', 'None')
-                            if update_auth and update_auth != 'None':
+                            if update_auth:
                                 st.metric("UPDATE AUTHORITY", "")
                                 st.markdown(f'<div class="address-display">{update_auth}</div>', unsafe_allow_html=True)
-                            else:
-                                st.metric("UPDATE AUTHORITY", "None")
                             st.markdown('</div>', unsafe_allow_html=True)
 
                             # If token is Token-2022, display extension features
@@ -322,41 +318,33 @@ with tab1:
                                 # Permanent Delegate
                                 st.markdown('<div class="authority-section">', unsafe_allow_html=True)
                                 delegate = result_dict.get('permanent_delegate', 'None')
-                                if delegate and delegate != 'None':
+                                if delegate:
                                     st.metric("PERMANENT DELEGATE", "")
                                     st.markdown(f'<div class="address-display">{delegate}</div>', unsafe_allow_html=True)
-                                else:
-                                    st.metric("PERMANENT DELEGATE", "None")
                                 st.markdown('</div>', unsafe_allow_html=True)
 
                                 # Transfer Hook
                                 st.markdown('<div class="authority-section">', unsafe_allow_html=True)
                                 hook = result_dict.get('transfer_hook', 'None')
-                                if hook and hook != 'None':
+                                if hook:
                                     st.metric("TRANSFER HOOK", "")
                                     st.markdown(f'<div class="address-display">{hook}</div>', unsafe_allow_html=True)
-                                else:
-                                    st.metric("TRANSFER HOOK", "None")
                                 st.markdown('</div>', unsafe_allow_html=True)
 
                                 # Confidential Transfers
                                 st.markdown('<div class="authority-section">', unsafe_allow_html=True)
                                 confidential = result_dict.get('confidential_transfers', 'None')
-                                if confidential and confidential != 'None':
+                                if confidential:
                                     st.metric("CONFIDENTIAL TRANSFERS", "")
                                     st.markdown(f'<div class="address-display">{confidential}</div>', unsafe_allow_html=True)
-                                else:
-                                    st.metric("CONFIDENTIAL TRANSFERS", "None")
                                 st.markdown('</div>', unsafe_allow_html=True)
 
                                 # Transaction Fees
                                 st.markdown('<div class="authority-section">', unsafe_allow_html=True)
                                 fees = result_dict.get('transaction_fees', 'None')
-                                if fees and fees not in ['None', 0]:
+                                if fees:
                                     st.metric("TRANSACTION FEES", "")
                                     st.markdown(f'<div class="address-display">{fees}</div>', unsafe_allow_html=True)
-                                else:
-                                    st.metric("TRANSACTION FEES", "None")
                                 st.markdown('</div>', unsafe_allow_html=True)
                         
                         # Add spacing between sections
