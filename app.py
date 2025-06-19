@@ -185,19 +185,37 @@ def render_metric_with_value(label, value, container_class="authority-section", 
                     'applied': False
                 }
             
+            # Help text with markdown example
+            st.markdown("""
+                <div style='margin-bottom: 0.5rem; font-size: 0.875rem;'>
+                    <span style='color: #666;'>Add links using markdown format:</span>
+                    <code style='background: #f1f3f4; padding: 0.2rem 0.4rem; border-radius: 4px;'>[Link text](https://example.com)</code>
+                </div>
+            """, unsafe_allow_html=True)
+            
             # Mitigation documentation input
             documentation = st.text_area(
                 "Mitigation Documentation",
                 value=st.session_state.mitigations[check_name].get('documentation', ''),
-                placeholder="Enter mitigation documentation with any relevant URLs...",
+                placeholder="Enter mitigation documentation with markdown links...",
                 key=f"{check_name}_documentation",
-                help="To add links, include the full URL (http:// or https://) in your text."
+                help="Use markdown format for links: [Link text](https://example.com)"
             )
             
-            # Update mitigation state
+            # Update mitigation state and extract links
+            import re
+            markdown_links = re.findall(r'\[(.*?)\]\((https?://[^\s\)]+)\)', documentation)
+            
+            if markdown_links:
+                st.markdown("<div style='margin-top: 0.5rem;'>", unsafe_allow_html=True)
+                st.markdown("**Detected Links:**", help="These links were detected in your documentation")
+                for text, url in markdown_links:
+                    st.markdown(f"- [{text}]({url})")
+                st.markdown("</div>", unsafe_allow_html=True)
+            
             st.session_state.mitigations[check_name].update({
                 'documentation': documentation,
-                'links': [url for url in documentation.split() if url.startswith(('http://', 'https://'))]
+                'links': [url for _, url in markdown_links]
             })
             
             # Status and apply button in columns
