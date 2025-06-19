@@ -102,7 +102,10 @@ class TokenReportStyles:
             spaceAfter=8,
             leading=14,
             alignment=0,
-            fontName='Helvetica'
+            fontName='Helvetica',
+            linkUnderline=True,
+            textColor=colors.black,
+            linkColor=colors.blue
         )
     
     def _create_conflicts_style(self):
@@ -432,7 +435,7 @@ trusted Token Program"""
                 # Replace markdown links with ReportLab link format
                 doc_text = re.sub(
                     r'\[(.*?)\]\((https?://[^\s\)]+)\)',
-                    lambda m: f'<link href="{m.group(2)}">{m.group(1)}</link>',
+                    r'<a href="\2" color="blue"><u>\1</u></a>',
                     doc_text
                 )
                 self.elements.append(Paragraph(doc_text, self.styles.risk_body))
