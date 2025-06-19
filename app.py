@@ -106,6 +106,33 @@ def render_custom_styles():
     }
     .stTextInput > div { margin-bottom: 0.5rem !important; }
     [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
+
+    /* Mitigation expander styles */
+    [data-testid="stExpander"] {
+        border: none !important;
+        box-shadow: none !important;
+        margin-top: 0 !important;
+        margin-bottom: 0.5rem !important;
+    }
+    [data-testid="stExpander"] > div:first-child {
+        border-radius: 4px !important;
+        border: 1px solid #e5e7eb !important;
+        background-color: #f8f9fa !important;
+    }
+    [data-testid="stExpanderContent"] {
+        border: 1px solid #e5e7eb !important;
+        border-top: none !important;
+        border-radius: 0 0 4px 4px !important;
+        padding: 0.75rem !important;
+    }
+    .stTextArea > div > textarea {
+        min-height: 100px !important;
+        font-size: 0.875rem !important;
+    }
+    [data-testid="stTextArea"] label {
+        font-size: 0.875rem !important;
+        font-weight: 600 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -118,11 +145,57 @@ def render_header():
     </div>
     """, unsafe_allow_html=True)
 
-def render_metric_with_value(label, value, container_class="authority-section"):
-    """Render a metric with a value in the address-display format."""
+def render_metric_with_value(label, value, container_class="authority-section", check_name=None):
+    """Render a metric with a value and mitigation controls if applicable."""
     st.markdown(f'<div class="{container_class}">', unsafe_allow_html=True)
     st.metric(label, "")
     st.markdown(f'<div class="address-display">{value}</div>', unsafe_allow_html=True)
+    
+    # Add mitigation controls if this is a failing check
+    if check_name and value not in [None, 'None', '', '0', 0]:
+        with st.expander(f"{label.title()} Check - Failed", expanded=False):
+            # Initialize mitigation state if needed
+            if check_name not in st.session_state.mitigations:
+                st.session_state.mitigations[check_name] = {
+                    'documentation': '',
+                    'links': [],
+                    'applied': False
+                }
+            
+            # Mitigation documentation input
+            documentation = st.text_area(
+                "Mitigation Documentation",
+                value=st.session_state.mitigations[check_name].get('documentation', ''),
+                placeholder="Enter mitigation documentation with any relevant URLs...",
+                key=f"{check_name}_documentation",
+                help="To add links, include the full URL (http:// or https://) in your text."
+            )
+            
+            # Update mitigation state
+            st.session_state.mitigations[check_name].update({
+                'documentation': documentation,
+                'links': [url for url in documentation.split() if url.startswith(('http://', 'https://'))]
+            })
+            
+            # Status and apply button in columns
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                status_html = """
+                    <div style="color: #28a745; font-weight: bold;">✅ Mitigation Applied</div>
+                """ if st.session_state.mitigations[check_name].get('applied', False) else """
+                    <div style="color: #dc3545; font-weight: bold;">❌ Mitigation Not Applied</div>
+                """
+                st.markdown(status_html, unsafe_allow_html=True)
+            
+            with col2:
+                if not st.session_state.mitigations[check_name].get('applied', False):
+                    if st.button("Apply", key=f"apply_{check_name}", use_container_width=True):
+                        if documentation.strip():
+                            st.session_state.mitigations[check_name]['applied'] = True
+                            st.rerun()
+                        else:
+                            st.error("Please provide mitigation documentation before applying.")
+    
     st.markdown('</div>', unsafe_allow_html=True)
 
 def render_security_review(status):
@@ -253,89 +326,6 @@ def create_pdf_zip(results, temp_dir):
                 zipf.write(pdf_path, os.path.basename(pdf_path))
     return zip_path
 
-def render_mitigation_ui(failing_checks, result_dict):
-    """Render the mitigation UI for failing security checks."""
-    if failing_checks:
-        st.markdown("""
-            <div class="section-header">
-                <h2>Security Checks & Mitigations</h2>
-                <p class="section-description">Review and apply mitigations for each failing security check below</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        for check in failing_checks:
-            with st.expander(f"{check.replace('_', ' ').title()} Check - Failed"):
-                render_mitigation_form(check, result_dict)
-
-def render_mitigation_form(check, result_dict):
-    """Render the mitigation form for a single security check."""
-    st.markdown("##### Mitigation Documentation")
-    st.markdown("""
-        <p style='color: #666; font-size: 0.9rem;'>To add links, include the full URL (http:// or https://) in your text.</p>
-        <div style='color: #666; font-size: 0.9rem; background-color: #f8f9fa; padding: 0.75rem; border-radius: 4px; margin-bottom: 0.75rem;'>
-            Example: Asset Issuer's Response: (https://example.com/response)
-        </div>
-    """, unsafe_allow_html=True)
-    
-    documentation = st.text_area(
-        "",
-        key=f"{check}_documentation",
-        value=st.session_state.mitigations[check].get('documentation', ''),
-        placeholder="Enter mitigation documentation with any relevant URLs..."
-    )
-    
-    st.session_state.mitigations[check].update({
-        'documentation': documentation,
-        'links': [url for url in documentation.split() if url.startswith(('http://', 'https://'))]
-    })
-    
-    render_mitigation_status(check, result_dict)
-
-def render_mitigation_status(check, result_dict):
-    """Render the status and action buttons for a mitigation."""
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        status_html = """
-            <div class="mitigation-status status-applied">
-                ✅ Mitigation Applied
-            </div>
-        """ if st.session_state.mitigations[check].get('applied', False) else """
-            <div class="mitigation-status status-not-applied">
-                ❌ Mitigation Not Applied
-            </div>
-        """
-        st.markdown(status_html, unsafe_allow_html=True)
-    
-    with col2:
-        if not st.session_state.mitigations[check].get('applied', False):
-            if st.button("Apply Mitigation", key=f"apply_{check}", use_container_width=True):
-                apply_mitigation(check, result_dict)
-
-def apply_mitigation(check, result_dict):
-    """Apply a mitigation and update the security review status."""
-    documentation = st.session_state.mitigations[check].get('documentation', '')
-    if not documentation.strip():
-        st.error("Please provide mitigation documentation before applying.")
-        return
-
-    st.session_state.mitigations[check]['applied'] = True
-    
-    if 'mitigations' not in result_dict:
-        result_dict['mitigations'] = {}
-    result_dict['mitigations'][check] = st.session_state.mitigations[check]
-    
-    update_security_review_status(result_dict)
-    st.success("✅ Mitigation applied successfully!")
-    st.rerun()
-
-def update_security_review_status(result_dict):
-    """Update the security review status based on mitigations."""
-    has_unmitigated_risks = any(
-        not st.session_state.mitigations[c].get('applied', False)
-        for c in result_dict.get('mitigations', {})
-    )
-    st.session_state.analysis_results['security_review'] = 'FAILED' if has_unmitigated_risks else 'PASSED'
-
 def main():
     """Main application entry point."""
     st.set_page_config(
@@ -422,9 +412,6 @@ def display_analysis_results(result_dict):
         'confirmation_status': st.session_state.confirmation_status
     })
     
-    failing_checks = get_failing_checks(result_dict)
-    initialize_mitigations(failing_checks)
-    
     col1, col2 = st.columns([4, 6])
     with col1:
         render_security_review(result_dict.get('security_review', 'UNKNOWN'))
@@ -433,51 +420,29 @@ def display_analysis_results(result_dict):
         render_metric_with_value("TOKEN PROGRAM",
             "Token-2022" if "Token 2022" in result_dict.get('owner_program', '') else "SPL Token")
         render_metric_with_value("FREEZE AUTHORITY",
-            result_dict.get('freeze_authority', 'None'))
+            result_dict.get('freeze_authority', 'None'),
+            check_name='freeze_authority')
         render_metric_with_value("UPDATE AUTHORITY",
             result_dict.get('update_authority', 'None'))
-        render_token_2022_features(result_dict)
+        
+        # Render Token-2022 specific features with mitigation controls
+        if "Token 2022" in result_dict.get('owner_program', ''):
+            features = {
+                'PERMANENT DELEGATE': ('permanent_delegate', result_dict.get('permanent_delegate', 'None')),
+                'TRANSFER HOOK': ('transfer_hook', result_dict.get('transfer_hook', 'None')),
+                'CONFIDENTIAL TRANSFERS': ('confidential_transfers', result_dict.get('confidential_transfers', 'None')),
+                'TRANSACTION FEES': ('transaction_fees', result_dict.get('transaction_fees', 'None'))
+            }
+            for label, (check_name, value) in features.items():
+                render_metric_with_value(label, value, check_name=check_name)
     
     st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
-    
-    render_mitigation_ui(failing_checks, result_dict)
     render_pump_fun_metrics(result_dict)
     
     with st.expander("View Raw Data"):
         st.json(result_dict)
     
     render_download_buttons(result_dict, st.session_state.token_address)
-
-def get_failing_checks(result_dict):
-    """Get the list of failing security checks."""
-    failing_checks = []
-    
-    if result_dict.get('freeze_authority'):
-        failing_checks.append('freeze_authority')
-    
-    if "Token 2022" in result_dict.get('owner_program', ''):
-        token_2022_checks = {
-            'permanent_delegate': result_dict.get('permanent_delegate'),
-            'transfer_hook': result_dict.get('transfer_hook'),
-            'confidential_transfers': result_dict.get('confidential_transfers'),
-            'transaction_fees': result_dict.get('transaction_fees')
-        }
-        failing_checks.extend(
-            check for check, value in token_2022_checks.items()
-            if value not in [None, 0, 'None']
-        )
-    
-    return failing_checks
-
-def initialize_mitigations(failing_checks):
-    """Initialize mitigation data structures for failing checks."""
-    for check in failing_checks:
-        if check not in st.session_state.mitigations:
-            st.session_state.mitigations[check] = {
-                'documentation': '',
-                'links': [],
-                'applied': False
-            }
 
 def render_batch_analysis():
     """Render the batch analysis interface."""
