@@ -8,581 +8,459 @@ from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Frame, PageTemplate
 from reportlab.pdfgen import canvas
 
-def create_styles():
-    styles = getSampleStyleSheet()
+class TokenReportStyles:
+    """Container for all report styles"""
+    def __init__(self):
+        self.styles = getSampleStyleSheet()
+        self._create_styles()
     
-    # Title style with better spacing and alignment
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=20,
-        spaceAfter=30,
-        alignment=1,  # Center alignment
-        textColor=colors.black,
-        fontName='Helvetica-Bold'
-    )
+    def _create_styles(self):
+        """Create all custom styles for the report"""
+        self.title = self._create_title_style()
+        self.cell = self._create_cell_style()
+        self.context = self._create_context_style()
+        self.header = self._create_header_style()
+        self.risk_header = self._create_risk_header_style()
+        self.risk_subheader = self._create_risk_subheader_style()
+        self.risk_body = self._create_risk_body_style()
+        self.conflicts = self._create_conflicts_style()
+        self.security = self._create_security_style()
     
-    # Cell style with better formatting
-    cell_style = ParagraphStyle(
-        'CustomCell',
-        parent=styles['Normal'],
-        fontSize=10,
-        spaceAfter=10,
-        fontName='Helvetica',
-        leading=14  # Line spacing
-    )
+    def _create_title_style(self):
+        return ParagraphStyle(
+            'CustomTitle',
+            parent=self.styles['Heading1'],
+            fontSize=20,
+            spaceAfter=30,
+            alignment=1,
+            textColor=colors.black,
+            fontName='Helvetica-Bold'
+        )
     
-    # Context style with better readability
-    context_style = ParagraphStyle(
-        'CustomContext',
-        parent=styles['Normal'],
-        fontSize=11,
-        spaceAfter=12,
-        leading=16,  # Increased line spacing
-        alignment=4,  # Justified text
-        fontName='Helvetica',
-        leftIndent=0,  # No left indent
-        rightIndent=0  # No right indent
-    )
+    def _create_cell_style(self):
+        return ParagraphStyle(
+            'CustomCell',
+            parent=self.styles['Normal'],
+            fontSize=10,
+            spaceAfter=10,
+            fontName='Helvetica',
+            leading=14
+        )
     
-    # Header style for table headers
-    header_style = ParagraphStyle(
-        'CustomHeader',
-        parent=styles['Normal'],
-        fontSize=11,
-        fontName='Helvetica-Bold',
-        textColor=colors.black,
-        alignment=0  # Left alignment
-    )
+    def _create_context_style(self):
+        return ParagraphStyle(
+            'CustomContext',
+            parent=self.styles['Normal'],
+            fontSize=11,
+            spaceAfter=12,
+            leading=16,
+            alignment=4,
+            fontName='Helvetica'
+        )
     
-    # Risk Findings styles
-    risk_header_style = ParagraphStyle(
-        'RiskHeader',
-        parent=styles['Heading1'],
-        fontSize=16,
-        spaceAfter=15,
-        textColor=colors.black,
-        fontName='Helvetica-Bold',
-        alignment=0,  # Left alignment
-        leading=20
-    )
+    def _create_header_style(self):
+        return ParagraphStyle(
+            'CustomHeader',
+            parent=self.styles['Normal'],
+            fontSize=11,
+            fontName='Helvetica-Bold',
+            textColor=colors.black,
+            alignment=0
+        )
     
-    risk_subheader_style = ParagraphStyle(
-        'RiskSubHeader',
-        parent=styles['Heading2'],
-        fontSize=14,
-        spaceAfter=8,
-        textColor=colors.black,
-        fontName='Helvetica-Bold',
-        alignment=0,  # Left alignment
-        leading=18
-    )
+    def _create_risk_header_style(self):
+        return ParagraphStyle(
+            'RiskHeader',
+            parent=self.styles['Heading1'],
+            fontSize=16,
+            spaceAfter=15,
+            textColor=colors.black,
+            fontName='Helvetica-Bold',
+            alignment=0,
+            leading=20
+        )
     
-    risk_body_style = ParagraphStyle(
-        'RiskBody',
-        parent=styles['Normal'],
-        fontSize=11,
-        spaceAfter=8,
-        leading=14,
-        alignment=0,  # Changed from 4 (justified) to 0 (left)
-        fontName='Helvetica',
-        leftIndent=0
-    )
+    def _create_risk_subheader_style(self):
+        return ParagraphStyle(
+            'RiskSubHeader',
+            parent=self.styles['Heading2'],
+            fontSize=14,
+            spaceAfter=8,
+            textColor=colors.black,
+            fontName='Helvetica-Bold',
+            alignment=0,
+            leading=18
+        )
+    
+    def _create_risk_body_style(self):
+        return ParagraphStyle(
+            'RiskBody',
+            parent=self.styles['Normal'],
+            fontSize=11,
+            spaceAfter=8,
+            leading=14,
+            alignment=0,
+            fontName='Helvetica'
+        )
+    
+    def _create_conflicts_style(self):
+        return ParagraphStyle(
+            'Conflicts',
+            parent=self.styles['Normal'],
+            fontSize=11,
+            spaceAfter=12,
+            leading=14,
+            alignment=4,
+            fontName='Helvetica'
+        )
+    
+    def _create_security_style(self):
+        return lambda status: ParagraphStyle(
+            'SecurityCell',
+            parent=self.cell,
+            textColor=colors.HexColor('#006400') if status == 'PASSED'
+                     else colors.red if status == 'FAILED'
+                     else colors.black,
+            fontName='Helvetica-Bold'
+        )
 
-    return styles, title_style, cell_style, context_style, header_style, risk_header_style, risk_subheader_style, risk_body_style
-
-def create_basic_table(data, cell_style):
-    """Create and style the basic information table"""
-    # Reduced table width (adjusted from 6 inches to 5 inches total)
-    table = Table(data, colWidths=[1.2*inch, 3.8*inch])
-    table.setStyle(TableStyle([
-        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-        ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
-        ('FONTSIZE', (0,0), (-1,-1), 10),
-        ('GRID', (0,0), (-1,-1), 1, colors.black),
-        ('BACKGROUND', (0,0), (0,-1), colors.lightgrey),
-        ('TEXTCOLOR', (0,0), (-1,-1), colors.black),
-        ('PADDING', (0,0), (-1,-1), 6),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-    ]))
-    return table
-
-def create_additional_table(data, cell_style):
-    """Create and style the additional fields table"""
-    table = Table(data, colWidths=[2.5*inch, 3.5*inch])
-    table.setStyle(TableStyle([
-        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),  # Bold header row
-        ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
-        ('FONTSIZE', (0,0), (-1,-1), 10),
-        ('GRID', (0,0), (-1,-1), 1, colors.black),
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#f0f0f0')),  # Light gray header
-        ('TEXTCOLOR', (0,0), (-1,-1), colors.black),
-        ('PADDING', (0,0), (-1,-1), 12),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('ROWBACKGROUNDS', (0,1), (-1,-2), [colors.white, colors.HexColor('#f9f9f9')]),  # Alternating rows
-        ('BACKGROUND', (0,-1), (-1,-1), colors.HexColor('#f8f8f8')),  # Slight emphasis on last row
-    ]))
-    return table
-
-def create_header(canvas, doc):
-    canvas.saveState()
-    # Set up the style for confidentiality notice
-    canvas.setFont('Helvetica-Oblique', 8)
-    canvas.setFillColor(colors.grey)
-    # Position the text at the top of the page (72 is the default margin)
-    canvas.drawString(72, letter[1] - 50, 
-        "Confidential treatment requested under NY Banking Law § 36.10 and NY Pub. Off. Law § 87.2(d).")
-    canvas.restoreState()
-
-def create_pdf(token_data, output_dir):
-    """Generate PDF for a single token"""
-    # Handle missing or invalid name/symbol
-    token_name = token_data.get('name', 'Unknown')
-    if token_name in ['N/A', None, '']:
-        token_name = 'Unknown'
+class TokenReportGenerator:
+    """Handles generation of token security assessment reports"""
+    def __init__(self, token_data, output_dir):
+        self.token_data = token_data
+        self.output_dir = output_dir
+        self.styles = TokenReportStyles()
+        self.elements = []
+        
+        # Initialize token metadata
+        self.token_name = self._get_valid_value(token_data.get('name'), 'Unknown')
+        self.token_symbol = self._get_valid_value(token_data.get('symbol'), 'UNKNOWN')
+        self.security_review = self._get_valid_value(token_data.get('security_review'), 'UNKNOWN')
+        self.is_token_2022 = "Token 2022" in token_data.get('owner_program', '')
     
-    token_symbol = token_data.get('symbol', 'UNKNOWN')
-    if token_symbol in ['N/A', None, '']:
-        token_symbol = 'UNKNOWN'
+    @staticmethod
+    def _get_valid_value(value, default):
+        """Return valid value or default if value is invalid"""
+        return default if value in ['N/A', None, ''] else value
     
-    filename = f"{token_name} ({token_symbol}) Security Memo.pdf"
-    filename = "".join(c for c in filename if c.isalnum() or c in (' ', '-', '_', '(', ')', '.'))
-    filepath = os.path.join(output_dir, filename)
+    def _create_document(self):
+        """Create and configure the PDF document"""
+        filename = f"{self.token_name} ({self.token_symbol}) Security Memo.pdf"
+        filename = "".join(c for c in filename if c.isalnum() or c in (' ', '-', '_', '(', ')', '.'))
+        filepath = os.path.join(self.output_dir, filename)
+        
+        doc = SimpleDocTemplate(
+            filepath,
+            pagesize=letter,
+            leftMargin=72,
+            rightMargin=72,
+            topMargin=72,
+            bottomMargin=72
+        )
+        
+        frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
+        template = PageTemplate(id='main', frames=frame, onPage=self._create_header)
+        doc.addPageTemplates([template])
+        
+        return doc, filepath
     
-    doc = SimpleDocTemplate(
-        filepath,
-        pagesize=letter,
-        leftMargin=72,
-        rightMargin=72,
-        topMargin=72,
-        bottomMargin=72
-    )
+    @staticmethod
+    def _create_header(canvas, doc):
+        """Add header to each page"""
+        canvas.saveState()
+        canvas.setFont('Helvetica-Oblique', 8)
+        canvas.setFillColor(colors.grey)
+        canvas.drawString(72, letter[1] - 50, 
+            "Confidential treatment requested under NY Banking Law § 36.10 and NY Pub. Off. Law § 87.2(d).")
+        canvas.restoreState()
     
-    # Add page template with header
-    frame = Frame(
-        doc.leftMargin, 
-        doc.bottomMargin, 
-        doc.width, 
-        doc.height,
-        id='normal'
-    )
-    template = PageTemplate(
-        id='main',
-        frames=frame,
-        onPage=create_header
-    )
-    doc.addPageTemplates([template])
+    def _add_title(self):
+        """Add report title"""
+        title = Paragraph(
+            f"Solana Token Security Assessment:<br/>{self.token_name} ({self.token_symbol})", 
+            self.styles.title
+        )
+        self.elements.extend([title, Spacer(1, 20)])
     
-    styles, title_style, cell_style, context_style, header_style, risk_header_style, risk_subheader_style, risk_body_style = create_styles()
-    elements = []
+    def _create_basic_table(self, data):
+        """Create and style the basic information table"""
+        table = Table(data, colWidths=[1.2*inch, 3.8*inch])
+        table.setStyle(TableStyle([
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+            ('FONTSIZE', (0,0), (-1,-1), 10),
+            ('GRID', (0,0), (-1,-1), 1, colors.black),
+            ('BACKGROUND', (0,0), (0,-1), colors.lightgrey),
+            ('TEXTCOLOR', (0,0), (-1,-1), colors.black),
+            ('PADDING', (0,0), (-1,-1), 6),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ]))
+        return table
     
-    # Title first
-    title = Paragraph(
-        f"Solana Token Security Assessment:<br/>{token_name} ({token_symbol})", 
-        title_style
-    )
-    elements.append(title)
-    elements.append(Spacer(1, 20))
+    def _create_additional_table(self, data):
+        """Create and style the additional fields table"""
+        table = Table(data, colWidths=[2.5*inch, 3.5*inch])
+        table.setStyle(TableStyle([
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
+            ('FONTSIZE', (0,0), (-1,-1), 10),
+            ('GRID', (0,0), (-1,-1), 1, colors.black),
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#f0f0f0')),
+            ('TEXTCOLOR', (0,0), (-1,-1), colors.black),
+            ('PADDING', (0,0), (-1,-1), 12),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('ROWBACKGROUNDS', (0,1), (-1,-2), [colors.white, colors.HexColor('#f9f9f9')]),
+            ('BACKGROUND', (0,-1), (-1,-1), colors.HexColor('#f8f8f8')),
+        ]))
+        return table
     
-    # Basic information table (reviewer, profile, date, etc.)
-    current_date = datetime.now().strftime("%Y-%m-%d")
-    profile = "SPL Token 2022 Standard" if "Token 2022" in token_data['owner_program'] else "SPL Token Standard"
+    def _add_metadata(self):
+        """Add basic metadata table"""
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        profile = "SPL Token 2022 Standard" if self.is_token_2022 else "SPL Token Standard"
+        
+        metadata = [
+            ["Reviewer", self.token_data.get('reviewer_name', 'Noama Samreen')],
+            ["Profile", profile],
+            ["Review Date", current_date],
+            ["Network", "Solana"],
+            ["Address", self.token_data['address']]
+        ]
+        
+        metadata_data = [[Paragraph(k, self.styles.cell), Paragraph(v, self.styles.cell)] 
+                        for k, v in metadata]
+        
+        self.elements.extend([
+            self._create_basic_table(metadata_data),
+            Spacer(1, 20)
+        ])
     
-    metadata_data = [
-        [Paragraph("Reviewer", cell_style), Paragraph(token_data.get('reviewer_name', 'Noama Samreen'), cell_style)],
-        [Paragraph("Profile", cell_style), Paragraph(profile, cell_style)],
-        [Paragraph("Review Date", cell_style), Paragraph(current_date, cell_style)],
-        [Paragraph("Network", cell_style), Paragraph("Solana", cell_style)],
-        [Paragraph("Address", cell_style), Paragraph(token_data['address'], cell_style)]
-    ]
+    def _add_conflicts_certification(self):
+        """Add conflicts certification section"""
+        conflicts_text = """<b>Conflicts Certification:</b> To the best of your knowledge, please confirm that you and your immediate family: (1) have not invested more than $10,000 in the asset or its issuer, (2) do not own more than 1% of the asset outstanding, and (3) do not have a personal relationship with the issuer's management, governing body, or owners. For wrapped assets, the underlying asset must be considered for the purpose of this conflict certification, unless: 1) the asset is a stablecoin; or 2) has a market cap of over $100 billion dollars. For multi-chain assets every version of the multi-chain asset must be counted together for the purpose of this conflict certification."""
+        
+        reviewer_confirmation = [[
+            Paragraph("Reviewer:", self.styles.cell),
+            Paragraph(self.token_data.get('reviewer_name', 'Noama Samreen'), self.styles.cell),
+            Paragraph("Status:", self.styles.cell),
+            Paragraph(self.token_data.get('confirmation_status', 'Confirmed'), self.styles.cell)
+        ]]
+        
+        reviewer_table = Table(reviewer_confirmation, colWidths=[1*inch, 2*inch, 1*inch, 2*inch])
+        reviewer_table.setStyle(TableStyle([
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+            ('FONTSIZE', (0,0), (-1,-1), 10),
+            ('GRID', (0,0), (-1,-1), 1, colors.black),
+            ('BACKGROUND', (0,0), (0,0), colors.lightgrey),
+            ('BACKGROUND', (2,0), (2,0), colors.lightgrey),
+            ('TEXTCOLOR', (0,0), (-1,-1), colors.black),
+            ('PADDING', (0,0), (-1,-1), 6),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ]))
+        
+        self.elements.extend([
+            Paragraph(conflicts_text, self.styles.conflicts),
+            Spacer(1, 10),
+            reviewer_table,
+            Spacer(1, 30)
+        ])
     
-    elements.append(create_basic_table(metadata_data, cell_style))
-    elements.append(Spacer(1, 20))
-    
-    # Add conflicts certification
-    conflicts_style = ParagraphStyle(
-        'Conflicts',
-        parent=styles['Normal'],
-        fontSize=11,
-        spaceAfter=12,
-        leading=14,
-        alignment=4,
-        fontName='Helvetica'
-    )
-    conflicts_text = """<b>Conflicts Certification:</b> To the best of your knowledge, please confirm that you and your immediate family: (1) have not invested more than $10,000 in the asset or its issuer, (2) do not own more than 1% of the asset outstanding, and (3) do not have a personal relationship with the issuer's management, governing body, or owners. For wrapped assets, the underlying asset must be considered for the purpose of this conflict certification, unless: 1) the asset is a stablecoin; or 2) has a market cap of over $100 billion dollars. For multi-chain assets every version of the multi-chain asset must be counted together for the purpose of this conflict certification."""
-    elements.append(Paragraph(conflicts_text, conflicts_style))
-    elements.append(Spacer(1, 10))
-    
-    # Add reviewer confirmation (single row table)
-    reviewer_confirmation = [[
-        Paragraph("Reviewer:", cell_style), 
-        Paragraph(token_data.get('reviewer_name', 'Noama Samreen'), cell_style),
-        Paragraph("Status:", cell_style),
-        Paragraph(token_data.get('confirmation_status', 'Confirmed'), cell_style)
-    ]]
-    
-    # Create table with 4 columns for single-row layout
-    reviewer_table = Table(reviewer_confirmation, colWidths=[1*inch, 2*inch, 1*inch, 2*inch])
-    reviewer_table.setStyle(TableStyle([
-        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-        ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
-        ('FONTSIZE', (0,0), (-1,-1), 10),
-        ('GRID', (0,0), (-1,-1), 1, colors.black),
-        ('BACKGROUND', (0,0), (0,0), colors.lightgrey),
-        ('BACKGROUND', (2,0), (2,0), colors.lightgrey),
-        ('TEXTCOLOR', (0,0), (-1,-1), colors.black),
-        ('PADDING', (0,0), (-1,-1), 6),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-    ]))
-    elements.append(reviewer_table)
-    elements.append(Spacer(1, 30))
-    
-    # Context text
-    context_text = """<b>Solana SPL Token Review Context:</b> Solana tokens do not possess customizable code per 
+    def _add_context(self):
+        """Add context section"""
+        context_text = """<b>Solana SPL Token Review Context:</b> Solana tokens do not possess customizable code per 
 asset. Rather, a single "program" generates boiler template tokens with distinct states for each 
 newly created token. Therefore, examining the base program configurations is adequate for 
 reviewing all other tokens associated with it. The 'Token Program' adheres to standard 
 practices, undergoing thorough review and auditing procedures. Therefore, within this review 
 process, the focus remains on validating token configurations specific to tokens managed by the 
 trusted Token Program"""
-    
-    elements.append(Paragraph(context_text, context_style))
-    elements.append(Spacer(1, 25))
-    
-    # Recommendation with error handling and risk scores
-    security_review = token_data.get('security_review', 'UNKNOWN')
-    if security_review in ['N/A', None, '']:
-        security_review = 'UNKNOWN'
-    
-    # Determine risk scores based on security review and mitigations
-    mitigations = token_data.get('mitigations', {})
-    all_mitigations_applied = True
-    
-    # Check if there are any failing checks that need mitigation
-    failing_checks = []
-    if token_data.get('freeze_authority'):
-        failing_checks.append('freeze_authority')
-    if "Token 2022" in token_data.get('owner_program', ''):
-        if token_data.get('permanent_delegate'):
-            failing_checks.append('permanent_delegate')
-        if token_data.get('transfer_hook'):
-            failing_checks.append('transfer_hook')
-        if token_data.get('confidential_transfers'):
-            failing_checks.append('confidential_transfers')
-        if token_data.get('transaction_fees') not in [None, 0, '0', 'None', '']:
-            failing_checks.append('transfer_fees')
-    
-    # Check if all failing checks have applied mitigations
-    for check in failing_checks:
-        if check not in mitigations or not mitigations[check].get('applied', False):
-            all_mitigations_applied = False
-            break
-    
-    # Set risk score based on mitigations
-    risk_score = 1 if (security_review == 'PASSED' or all_mitigations_applied) else 5
-    
-    recommendation = (
-        f"<b>{token_name} ({token_symbol}) "
-        f"{'is' if security_review == 'PASSED' else 'is not'} recommended for listing.</b>"
-    )
-    elements.append(Paragraph(recommendation, ParagraphStyle(
-        'CustomRecommendation',
-        parent=context_style,
-        fontSize=12,
-        textColor=colors.HexColor('#006400') if security_review == 'PASSED' else colors.red
-    )))
-    elements.append(Spacer(1, 15))
-    
-    # Add risk scores
-    risk_style = ParagraphStyle(
-        'RiskScore',
-        parent=styles['Normal'],
-        fontSize=11,
-        spaceAfter=6,
-        leading=14,
-        fontName='Helvetica'
-    )
-    
-    elements.append(Paragraph(
-        f"<b>Residual Security Risk Score:</b> {risk_score}",
-        risk_style
-    ))
-    elements.append(Paragraph(
-        f"<b>Inherent Security Risk Score:</b> {risk_score}",
-        risk_style
-    ))
-    elements.append(Spacer(1, 25))
-    
-    # Additional details table
-    additional_data = [["Field", "Value"]]
-    
-    # Base fields for all tokens
-    field_order = [
-        'owner_program',
-        'freeze_authority'
-    ]
-    
-    # Add Token 2022 specific fields if applicable
-    if "Token 2022" in token_data.get('owner_program', ''):
-        field_order.extend([
-            'update_authority',
-            'permanent_delegate',
-            'transaction_fees',
-            'transfer_hook',
-            'confidential_transfers'
+        
+        self.elements.extend([
+            Paragraph(context_text, self.styles.context),
+            Spacer(1, 25)
         ])
     
-    # Add pump.fun specific fields if applicable
-   # if "Pump.Fun Mint Authority" in str(token_data.get('update_authority', '')):
-    #    field_order.extend([
-    #        'is_genuine_pump_fun_token',
-    #        'interacted_with',
-    #        'token_graduated_to_raydium'
-    #    ])
-    #    if token_data.get('interacting_account') or token_data.get('interaction_signature'):
-    #        field_order.extend([
-    #            'interacting_account',
-    #            'interaction_signature'
-    #        ])
-    
-    # Add fields in specified order
-    for field in field_order:
-        value = token_data.get(field, 'None')
-        if value in ['N/A', None, '']:
-            value = 'None'
-        if isinstance(value, bool):
-            value = str(value)
-        display_name = str(field).replace('_', ' ').title()
-        additional_data.append([
-            Paragraph(display_name, cell_style),
-            Paragraph(str(value), cell_style)
+    def _add_recommendation(self):
+        """Add recommendation section with risk scores"""
+        mitigations = self.token_data.get('mitigations', {})
+        all_mitigations_applied = all(
+            m.get('applied', False) 
+            for m in mitigations.values()
+        )
+        
+        risk_score = 1 if (self.security_review == 'PASSED' or all_mitigations_applied) else 5
+        
+        recommendation = (
+            f"<b>{self.token_name} ({self.token_symbol}) "
+            f"{'is' if self.security_review == 'PASSED' else 'is not'} recommended for listing.</b>"
+        )
+        
+        self.elements.extend([
+            Paragraph(recommendation, ParagraphStyle(
+                'CustomRecommendation',
+                parent=self.styles.context,
+                fontSize=12,
+                textColor=colors.HexColor('#006400') if self.security_review == 'PASSED' else colors.red
+            )),
+            Spacer(1, 15),
+            Paragraph(f"<b>Residual Security Risk Score:</b> {risk_score}", self.styles.risk_body),
+            Paragraph(f"<b>Inherent Security Risk Score:</b> {risk_score}", self.styles.risk_body),
+            Spacer(1, 25)
         ])
     
-    # Add security review as the last row
-    security_style = ParagraphStyle(
-        'SecurityCell',
-        parent=cell_style,
-        textColor=colors.HexColor('#006400') if security_review == 'PASSED' 
-                 else colors.red if security_review == 'FAILED'
-                 else colors.black,
-        fontName='Helvetica-Bold'
-    )
-    
-    additional_data.append([
-        Paragraph("Security Review", cell_style),
-        Paragraph(security_review, security_style)
-    ])
-    
-    elements.append(create_additional_table(additional_data, cell_style))
-    
-    # After the details table, add Risk Findings section
-    elements.append(Spacer(1, 30))
-    
-    # Risk Findings Header
-    elements.append(Paragraph("Risk Findings", risk_header_style))
-    
-    # Standard SPL Token Check
-    is_valid_token_program = "Token Program" in token_data.get('owner_program', '') or "Token 2022" in token_data.get('owner_program', '')
-    spl_header = f"""{'1' if is_valid_token_program else '5'} | Standard Solana SPL Token {'- Pass' if is_valid_token_program else '- Fail'}"""
-    
-    elements.append(Paragraph(spl_header, risk_subheader_style))
-    
-    spl_description = """The token must be a standard Solana SPL Token (i.e. owned by the Token Program or Token
-2022 Program) to be eligible for umbrella approval."""
-    elements.append(Paragraph(spl_description, risk_body_style))
-    elements.append(Spacer(1, 8))
-    
-    # Assessment
-    elements.append(Paragraph("<b>Assessment:</b>", risk_body_style))
-    owner_assessment = f"""As token metadata indicates, the token owner is the {token_data['owner_program']}."""
-    elements.append(Paragraph(owner_assessment, risk_body_style))
-    elements.append(Spacer(1, 8))
-    
-    # Freeze Authority Check
-    freeze_value = token_data.get('freeze_authority', 'None')
-    has_no_freeze = freeze_value == 'None' or freeze_value is None or freeze_value == ''
-    # Check if mitigation is applied for freeze authority
-    freeze_mitigation_applied = (token_data.get('mitigations', {}).get('freeze_authority', {}).get('applied', False))
-    freeze_status = 'Pass' if (has_no_freeze or freeze_mitigation_applied) else 'Fail'
-    freeze_score = '1' if (has_no_freeze or freeze_mitigation_applied) else '5'
-    freeze_header = f"""{freeze_score} | No Freeze Authority - {freeze_status}"""
-    elements.append(Paragraph(freeze_header, risk_subheader_style))
-    
-    freeze_description = """A missing freeze authority means that it is set to null and therefore a permanently revoked privilege. This means that account blacklisting is not possible."""
-    elements.append(Paragraph(freeze_description, risk_body_style))
-    elements.append(Spacer(1, 8))
-    
-    # Assessment
-    elements.append(Paragraph("<b>Assessment:</b>", risk_body_style))
-    elements.append(Paragraph(
-        f"""As token metadata indicates, the freeze authority is: {freeze_value}.""",
-        risk_body_style
-    ))
-    elements.append(Spacer(1, 8))
-    
-    # Mitigations for Freeze Authority
-    elements.append(Paragraph("<b>Mitigations:</b>", risk_body_style))
-    if not has_no_freeze and token_data.get('mitigations', {}).get('freeze_authority'):
-        mitigation = token_data['mitigations']['freeze_authority']
-        if mitigation['applied']:
-            # Create hyperlinked text from documentation
-            doc_text = mitigation['documentation']
-            # Find URLs in the text and convert them to ReportLab hyperlinks
-            words = doc_text.split()
-            linked_text = []
-            for word in words:
-                if word.startswith(('http://', 'https://')):
-                    linked_text.append(f'<link href="{word}">{word}</link>')
-                else:
-                    linked_text.append(word)
-            doc_text = ' '.join(linked_text)
-            elements.append(Paragraph(doc_text, risk_body_style))
-    else:
-        elements.append(Paragraph("N/A", risk_body_style))
-    
-    # Add Token 2022 specific checks if applicable
-    if "Token 2022" in token_data.get('owner_program', ''):
-        # Permanent Delegate Check
-        delegate_value = token_data.get('permanent_delegate', 'None')
-        has_no_delegate = delegate_value == 'None' or delegate_value is None or delegate_value == ''
-        delegate_header = f"""{'1' if has_no_delegate else '5'} | No Permanent Delegate {'- Pass' if has_no_delegate else '- Fail'}"""
-        elements.append(Paragraph(delegate_header, risk_subheader_style))
+    def _add_token_details(self):
+        """Add token details table"""
+        field_order = ['owner_program', 'freeze_authority']
         
-        delegate_description = """A missing Permanent Delegate means that it is set to null and therefore no delegate can burn or transfer any amount of tokens."""
-        elements.append(Paragraph(delegate_description, risk_body_style))
-        elements.append(Paragraph("<b>Assessment:</b>", risk_body_style))
-        elements.append(Paragraph(
-            f"""As token metadata indicates, the permanent delegate is: {delegate_value}.""",
-            risk_body_style
-        ))
-        elements.append(Spacer(1, 8))
+        if self.is_token_2022:
+            field_order.extend([
+                'update_authority',
+                'permanent_delegate',
+                'transaction_fees',
+                'transfer_hook',
+                'confidential_transfers'
+            ])
         
-        # Mitigations for Permanent Delegate
-        elements.append(Paragraph("<b>Mitigations:</b>", risk_body_style))
-        if not has_no_delegate and token_data.get('mitigations', {}).get('permanent_delegate'):
-            mitigation = token_data['mitigations']['permanent_delegate']
+        data = [["Field", "Value"]]
+        for field in field_order:
+            value = self._get_valid_value(self.token_data.get(field), 'None')
+            if isinstance(value, bool):
+                value = str(value)
+            display_name = field.replace('_', ' ').title()
+            data.append([
+                Paragraph(display_name, self.styles.cell),
+                Paragraph(str(value), self.styles.cell)
+            ])
+        
+        data.append([
+            Paragraph("Security Review", self.styles.cell),
+            Paragraph(self.security_review, self.styles.security(self.security_review))
+        ])
+        
+        self.elements.extend([
+            self._create_additional_table(data),
+            Spacer(1, 30)
+        ])
+    
+    def _add_risk_findings(self):
+        """Add risk findings section"""
+        self.elements.append(Paragraph("Risk Findings", self.styles.risk_header))
+        
+        # Add standard checks
+        self._add_standard_spl_check()
+        self._add_freeze_authority_check()
+        
+        # Add Token 2022 specific checks
+        if self.is_token_2022:
+            self._add_token_2022_checks()
+    
+    def _add_standard_spl_check(self):
+        """Add standard SPL token check"""
+        is_valid = "Token Program" in self.token_data.get('owner_program', '') or self.is_token_2022
+        self.elements.extend([
+            Paragraph(f"{'1' if is_valid else '5'} | Standard Solana SPL Token {'- Pass' if is_valid else '- Fail'}", 
+                     self.styles.risk_subheader),
+            Paragraph(
+                "The token must be a standard Solana SPL Token (i.e. owned by the Token Program or Token 2022 Program) to be eligible for umbrella approval.",
+                self.styles.risk_body
+            ),
+            Spacer(1, 8),
+            Paragraph("<b>Assessment:</b>", self.styles.risk_body),
+            Paragraph(
+                f"As token metadata indicates, the token owner is the {self.token_data['owner_program']}.",
+                self.styles.risk_body
+            ),
+            Spacer(1, 8)
+        ])
+    
+    def _add_check_section(self, title, value, description, field_name):
+        """Add a generic check section"""
+        has_no_value = value in [None, 'None', '', '0', 0]
+        mitigation_applied = self.token_data.get('mitigations', {}).get(field_name, {}).get('applied', False)
+        status = 'Pass' if (has_no_value or mitigation_applied) else 'Fail'
+        score = '1' if (has_no_value or mitigation_applied) else '5'
+        
+        self.elements.extend([
+            Paragraph(f"{score} | {title} - {status}", self.styles.risk_subheader),
+            Paragraph(description, self.styles.risk_body),
+            Paragraph("<b>Assessment:</b>", self.styles.risk_body),
+            Paragraph(f"As token metadata indicates, the {field_name.replace('_', ' ')} is: {value}.",
+                     self.styles.risk_body),
+            Spacer(1, 8),
+            Paragraph("<b>Mitigations:</b>", self.styles.risk_body)
+        ])
+        
+        if not has_no_value and field_name in self.token_data.get('mitigations', {}):
+            mitigation = self.token_data['mitigations'][field_name]
             if mitigation['applied']:
-                # Create hyperlinked text from documentation
-                doc_text = mitigation['documentation']
-                words = doc_text.split()
-                linked_text = []
-                for word in words:
-                    if word.startswith(('http://', 'https://')):
-                        linked_text.append(f'<link href="{word}">{word}</link>')
-                    else:
-                        linked_text.append(word)
-                doc_text = ' '.join(linked_text)
-                elements.append(Paragraph(doc_text, risk_body_style))
+                doc_text = ' '.join(
+                    f'<link href="{word}">{word}</link>' if word.startswith(('http://', 'https://'))
+                    else word
+                    for word in mitigation['documentation'].split()
+                )
+                self.elements.append(Paragraph(doc_text, self.styles.risk_body))
         else:
-            elements.append(Paragraph("N/A", risk_body_style))
-        
-        # Transfer Hook Check
-        hook_value = token_data.get('transfer_hook', 'None')
-        has_no_hook = hook_value == 'None' or hook_value is None or hook_value == ''
-        hook_header = f"""{'1' if has_no_hook else '5'} | No Transfer Hook {'- Pass' if has_no_hook else '- Fail'}"""
-        elements.append(Paragraph(hook_header, risk_subheader_style))
-        
-        transfer_hook_description = """A missing TransferHook means that it is set to null and therefore does not communicate with a custom program whenever this token is transferred."""
-        elements.append(Paragraph(transfer_hook_description, risk_body_style))
-        elements.append(Paragraph("<b>Assessment:</b>", risk_body_style))
-        elements.append(Paragraph(
-            f"""As token metadata indicates, the transfer hook is: {hook_value}.""",
-            risk_body_style
-        ))
-        elements.append(Spacer(1, 8))
-        
-        # Mitigations for Transfer Hook
-        elements.append(Paragraph("<b>Mitigations:</b>", risk_body_style))
-        if not has_no_hook and token_data.get('mitigations', {}).get('transfer_hook'):
-            mitigation = token_data['mitigations']['transfer_hook']
-            if mitigation['applied']:
-                # Create hyperlinked text from documentation
-                doc_text = mitigation['documentation']
-                words = doc_text.split()
-                linked_text = []
-                for word in words:
-                    if word.startswith(('http://', 'https://')):
-                        linked_text.append(f'<link href="{word}">{word}</link>')
-                    else:
-                        linked_text.append(word)
-                doc_text = ' '.join(linked_text)
-                elements.append(Paragraph(doc_text, risk_body_style))
-        else:
-            elements.append(Paragraph("N/A", risk_body_style))
-        
-        # Confidential Transfers Check
-        confidential_value = token_data.get('confidential_transfers', 'None')
-        has_no_confidential = confidential_value == 'None' or confidential_value is None or confidential_value == ''
-        confidential_header = f"""{'1' if has_no_confidential else '5'} | No Confidential Transfers {'- Pass' if has_no_confidential else '- Fail'}"""
-        elements.append(Paragraph(confidential_header, risk_subheader_style))
-        
-        confidential_description = """The confidential transfer is a non-anonymous, non-private transfer that publicly shares the source, destination, and token type, but uses zero-knowledge proofs to encrypt the amount of the transfer."""
-        elements.append(Paragraph(confidential_description, risk_body_style))
-        elements.append(Paragraph("<b>Assessment:</b>", risk_body_style))
-        elements.append(Paragraph(
-            f"""As token metadata indicates, the confidential transfers are: {confidential_value}.""",
-            risk_body_style
-        ))
-        elements.append(Spacer(1, 8))
-        
-        # Mitigations for Confidential Transfers
-        elements.append(Paragraph("<b>Mitigations:</b>", risk_body_style))
-        if not has_no_confidential and token_data.get('mitigations', {}).get('confidential_transfers'):
-            mitigation = token_data['mitigations']['confidential_transfers']
-            if mitigation['applied']:
-                # Create hyperlinked text from documentation
-                doc_text = mitigation['documentation']
-                words = doc_text.split()
-                linked_text = []
-                for word in words:
-                    if word.startswith(('http://', 'https://')):
-                        linked_text.append(f'<link href="{word}">{word}</link>')
-                    else:
-                        linked_text.append(word)
-                doc_text = ' '.join(linked_text)
-                elements.append(Paragraph(doc_text, risk_body_style))
-        else:
-            elements.append(Paragraph("N/A", risk_body_style))
-        
-        # Transaction Fees Check
-        fees_value = token_data.get('transaction_fees', 'None')
-        has_no_fees = (fees_value == 'None' or fees_value is None or fees_value == '' 
-                      or fees_value == '0' or fees_value == 0)
-        fees_header = f"""{'1' if has_no_fees else '5'} | No Transaction Fees {'- Pass' if has_no_fees else '- Fail'}"""
-        elements.append(Paragraph(fees_header, risk_subheader_style))
-        
-        fees_description = """Transaction fees are set to 0 and therefore no transaction fees are possible and send/receive token amounts are the same as expected."""
-        elements.append(Paragraph(fees_description, risk_body_style))
-        elements.append(Paragraph("<b>Assessment:</b>", risk_body_style))
-        elements.append(Paragraph(
-            f"""As token metadata indicates, the transaction fees are: {fees_value}.""",
-            risk_body_style
-        ))
-        elements.append(Spacer(1, 8))
-        
-        # Mitigations for Transaction Fees
-        elements.append(Paragraph("<b>Mitigations:</b>", risk_body_style))
-        if not has_no_fees and token_data.get('mitigations', {}).get('transfer_fees'):
-            mitigation = token_data['mitigations']['transfer_fees']
-            if mitigation['applied']:
-                # Create hyperlinked text from documentation
-                doc_text = mitigation['documentation']
-                words = doc_text.split()
-                linked_text = []
-                for word in words:
-                    if word.startswith(('http://', 'https://')):
-                        linked_text.append(f'<link href="{word}">{word}</link>')
-                    else:
-                        linked_text.append(word)
-                doc_text = ' '.join(linked_text)
-                elements.append(Paragraph(doc_text, risk_body_style))
-        else:
-            elements.append(Paragraph("N/A", risk_body_style))
+            self.elements.append(Paragraph("N/A", self.styles.risk_body))
     
-    # Build PDF
-    doc.build(elements)
-    return filepath
+    def _add_freeze_authority_check(self):
+        """Add freeze authority check section"""
+        self._add_check_section(
+            "No Freeze Authority",
+            self.token_data.get('freeze_authority'),
+            "A missing freeze authority means that it is set to null and therefore a permanently revoked privilege. This means that account blacklisting is not possible.",
+            'freeze_authority'
+        )
+    
+    def _add_token_2022_checks(self):
+        """Add Token-2022 specific checks"""
+        checks = [
+            ("No Permanent Delegate",
+             self.token_data.get('permanent_delegate'),
+             "A missing Permanent Delegate means that it is set to null and therefore no delegate can burn or transfer any amount of tokens.",
+             'permanent_delegate'),
+            
+            ("No Transfer Hook",
+             self.token_data.get('transfer_hook'),
+             "A missing TransferHook means that it is set to null and therefore does not communicate with a custom program whenever this token is transferred.",
+             'transfer_hook'),
+            
+            ("No Confidential Transfers",
+             self.token_data.get('confidential_transfers'),
+             "The confidential transfer is a non-anonymous, non-private transfer that publicly shares the source, destination, and token type, but uses zero-knowledge proofs to encrypt the amount of the transfer.",
+             'confidential_transfers'),
+            
+            ("No Transaction Fees",
+             self.token_data.get('transaction_fees'),
+             "Transaction fees are set to 0 and therefore no transaction fees are possible and send/receive token amounts are the same as expected.",
+             'transfer_fees')
+        ]
+        
+        for title, value, description, field_name in checks:
+            self._add_check_section(title, value, description, field_name)
+    
+    def generate(self):
+        """Generate the complete PDF report"""
+        doc, filepath = self._create_document()
+        
+        # Build report structure
+        self._add_title()
+        self._add_metadata()
+        self._add_conflicts_certification()
+        self._add_context()
+        self._add_recommendation()
+        self._add_token_details()
+        self._add_risk_findings()
+        
+        # Build PDF
+        doc.build(self.elements)
+        return filepath
+
+def create_pdf(token_data, output_dir):
+    """Create a PDF report for the given token data"""
+    generator = TokenReportGenerator(token_data, output_dir)
+    return generator.generate()
 
 # Export the function
 __all__ = ['create_pdf']
