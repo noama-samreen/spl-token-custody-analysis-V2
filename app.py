@@ -192,6 +192,35 @@ def render_metric_with_value(label, value, container_class="authority-section", 
                     if st.button("Apply", key=f"apply_{check_name}", use_container_width=True):
                         if documentation.strip():
                             st.session_state.mitigations[check_name]['applied'] = True
+                            
+                            # Update the result dict in session state
+                            if 'analysis_results' in st.session_state:
+                                if 'mitigations' not in st.session_state.analysis_results:
+                                    st.session_state.analysis_results['mitigations'] = {}
+                                st.session_state.analysis_results['mitigations'][check_name] = {
+                                    'documentation': documentation,
+                                    'applied': True
+                                }
+                                
+                                # Calculate new security review status
+                                has_unmitigated_risks = False
+                                
+                                # Check freeze authority
+                                if st.session_state.analysis_results.get('freeze_authority'):
+                                    if not st.session_state.mitigations.get('freeze_authority', {}).get('applied', False):
+                                        has_unmitigated_risks = True
+                                
+                                # Check Token 2022 features if present
+                                if "Token 2022" in st.session_state.analysis_results.get('owner_program', ''):
+                                    for feature in ['permanent_delegate', 'transfer_hook', 'confidential_transfers', 'transaction_fees']:
+                                        value = st.session_state.analysis_results.get(feature)
+                                        if value not in [None, 0, 'None']:
+                                            if not st.session_state.mitigations.get(feature, {}).get('applied', False):
+                                                has_unmitigated_risks = True
+                                                break
+                                
+                                st.session_state.analysis_results['security_review'] = 'FAILED' if has_unmitigated_risks else 'PASSED'
+                            
                             st.rerun()
                         else:
                             st.error("Please provide mitigation documentation before applying.")
