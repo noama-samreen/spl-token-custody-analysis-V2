@@ -593,13 +593,21 @@ async def process_batch_tokens(addresses, progress_bar, status_text,
     async with aiohttp.ClientSession() as session:
         results = []
         for i, address in enumerate(addresses, 1):
-            result = await get_token_details_async(address, session)
-            if isinstance(result[0], dict):
-                result[0].update({
+            result, _ = await get_token_details_async(address, session)
+            if isinstance(result, dict):
+                result.update({
                     'reviewer_name': batch_reviewer_name,
                     'confirmation_status': batch_confirmation_status
                 })
-            results.append(result[0])
+            elif hasattr(result, 'to_dict'):
+                # Convert TokenDetails object to dictionary
+                result_dict = result.to_dict()
+                result_dict.update({
+                    'reviewer_name': batch_reviewer_name,
+                    'confirmation_status': batch_confirmation_status
+                })
+                result = result_dict
+            results.append(result)
             
             progress = i / len(addresses)
             progress_bar.progress(progress)
