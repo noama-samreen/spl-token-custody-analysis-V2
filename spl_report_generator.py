@@ -8,6 +8,7 @@ from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Frame, PageTemplate
 from reportlab.pdfgen import canvas
 from typing import Dict
+import re
 
 class TokenReportStyles:
     """Container for all report styles"""
@@ -426,10 +427,13 @@ trusted Token Program"""
         if not has_no_value and field_name in self.token_data.get('mitigations', {}):
             mitigation = self.token_data['mitigations'][field_name]
             if mitigation['applied']:
-                doc_text = ' '.join(
-                    f'<link href="{word}">{word}</link>' if word.startswith(('http://', 'https://'))
-                    else word
-                    for word in mitigation['documentation'].split()
+                # Convert markdown links to ReportLab link format
+                doc_text = mitigation['documentation']
+                # Replace markdown links with ReportLab link format
+                doc_text = re.sub(
+                    r'\[(.*?)\]\((https?://[^\s\)]+)\)',
+                    lambda m: f'<link href="{m.group(2)}">{m.group(1)}</link>',
+                    doc_text
                 )
                 self.elements.append(Paragraph(doc_text, self.styles.risk_body))
         else:
