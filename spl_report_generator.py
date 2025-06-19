@@ -7,6 +7,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Frame, PageTemplate
 from reportlab.pdfgen import canvas
+from typing import Dict
 
 class TokenReportStyles:
     """Container for all report styles"""
@@ -290,11 +291,30 @@ trusted Token Program"""
             for m in mitigations.values()
         )
         
-        risk_score = 1 if (self.security_review == 'PASSED' or all_mitigations_applied) else 5
+        # Calculate risk score based on the highest risk level
+        risk_score = 1  # Default to lowest risk
+        
+        # Check for freeze authority
+        if self.token_data.get('freeze_authority'):
+            if mitigations.get('freeze_authority', {}).get('applied', False):
+                risk_score = max(risk_score, 4)  # Mitigated
+            else:
+                risk_score = 5  # Failed
+        
+        # Check Token 2022 specific features
+        if self.is_token_2022:
+            for feature in ['permanent_delegate', 'transfer_hook', 'confidential_transfers', 'transaction_fees']:
+                value = getattr(self.token_data.get('extensions', {}), feature, None)
+                if value not in [None, 0, 'None']:
+                    if mitigations.get(feature, {}).get('applied', False):
+                        risk_score = max(risk_score, 4)  # Mitigated
+                    else:
+                        risk_score = 5  # Failed
+                        break
         
         recommendation = (
             f"<b>{self.token_name} ({self.token_symbol}) "
-            f"{'is' if self.security_review == 'PASSED' else 'is not'} recommended for listing.</b>"
+            f"{'is' if risk_score < 5 else 'is not'} recommended for listing.</b>"
         )
         
         self.elements.extend([
@@ -302,7 +322,7 @@ trusted Token Program"""
                 'CustomRecommendation',
                 parent=self.styles.context,
                 fontSize=12,
-                textColor=colors.HexColor('#006400') if self.security_review == 'PASSED' else colors.red
+                textColor=colors.HexColor('#006400') if risk_score < 5 else colors.red
             )),
             Spacer(1, 15),
             Paragraph(f"<b>Residual Security Risk Score:</b> {risk_score}", self.styles.risk_body),
@@ -359,8 +379,11 @@ trusted Token Program"""
     def _add_standard_spl_check(self):
         """Add standard SPL token check"""
         is_valid = "Token Program" in self.token_data.get('owner_program', '') or self.is_token_2022
+        score = '1' if is_valid else '5'
+        status = 'Pass' if is_valid else 'Fail'
+        
         self.elements.extend([
-            Paragraph(f"{'1' if is_valid else '5'} | Standard Solana SPL Token {'- Pass' if is_valid else '- Fail'}", 
+            Paragraph(f"{score} | Standard Solana SPL Token - {status}", 
                      self.styles.risk_subheader),
             Paragraph(
                 "The token must be a standard Solana SPL Token (i.e. owned by the Token Program or Token 2022 Program) to be eligible for umbrella approval.",
@@ -379,8 +402,16 @@ trusted Token Program"""
         """Add a generic check section"""
         has_no_value = value in [None, 'None', '', '0', 0]
         mitigation_applied = self.token_data.get('mitigations', {}).get(field_name, {}).get('applied', False)
-        status = 'Pass' if (has_no_value or mitigation_applied) else 'Fail'
-        score = '1' if (has_no_value or mitigation_applied) else '5'
+        
+        if has_no_value:
+            status = 'Pass'
+            score = '1'
+        elif mitigation_applied:
+            status = 'Mitigated'
+            score = '4'
+        else:
+            status = 'Fail'
+            score = '5'
         
         self.elements.extend([
             Paragraph(f"{score} | {title} - {status}", self.styles.risk_subheader),
@@ -467,3 +498,68 @@ __all__ = ['create_pdf']
 
 if __name__ == '__main__':
     pdf_path = create_pdf(token_data, output_dir)
+
+def to_dict(self) -> Dict:
+    result = {
+        'name': self.token_name,
+        'symbol': self.token_symbol,
+        'address': self.address,
+        'owner_program': self.owner_program,
+        'freeze_authority': self.freeze_authority,
+        'update_authority': (f"{self.update_authority} (Pump.Fun Mint Authority)" 
+                           if self.update_authority == "TSLvdd1pWpHVjahSpsvCXUbgwsL3JAcvokwaKt1eokM" 
+                           else self.update_authority)
+    }
+    
+    if self.extensions:
+        result.update({
+            'permanent_delegate': self.extensions.permanent_delegate,
+            'transaction_fees': self.extensions.transfer_fee,
+            'transfer_hook': self.extensions.transfer_hook_authority,
+            'confidential_transfers': self.extensions.confidential_transfers_authority,
+        })
+    
+    if self.update_authority == "TSLvdd1pWpHVjahSpsvCXUbgwsL3JAcvokwaKt1eokM":
+        result['is_genuine_pump_fun_token'] = self.is_genuine_pump_fun_token
+        result['token_graduated_to_raydium'] = self.token_graduated_to_raydium
+        if self.is_genuine_pump_fun_token and self.interacted_with:
+            result['interacted_with'] = self.interacted_with
+            result['interacting_account'] = self.interacting_account
+            result['interaction_signature'] = self.interaction_signature
+    
+    # Add mitigations to result
+    result['mitigations'] = {
+        check: {
+            'documentation': mitigation.documentation,
+            'applied': mitigation.applied
+        }
+        for check, mitigation in self.mitigations.items()
+    }
+    
+    # Calculate security review status based on risk score
+    risk_score = 1  # Default to lowest risk
+    
+    # Check for freeze authority
+    if self.freeze_authority:
+        if self.mitigations.get('freeze_authority', {}).get('applied', False):
+            risk_score = max(risk_score, 4)  # Mitigated
+        else:
+            risk_score = 5  # Failed
+    
+    # Check Token 2022 specific features if present
+    if self.extensions:
+        for feature, value in {
+            'permanent_delegate': self.extensions.permanent_delegate,
+            'transfer_hook': self.extensions.transfer_hook_authority,
+            'confidential_transfers': self.extensions.confidential_transfers_authority,
+            'transfer_fees': self.extensions.transfer_fee
+        }.items():
+            if value not in [None, 0, 'None']:
+                if self.mitigations.get(feature, {}).get('applied', False):
+                    risk_score = max(risk_score, 4)  # Mitigated
+                else:
+                    risk_score = 5  # Failed
+                    break
+    
+    result['security_review'] = 'PASSED' if risk_score < 5 else 'FAILED'
+    return result
