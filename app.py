@@ -60,9 +60,32 @@ def render_custom_styles():
         font-size: 2.25rem;
         font-weight: 700;
         line-height: 1;
+        margin-bottom: 1rem;
     }
     .security-review-value.failed { color: #dc3545; }
     .security-review-value.passed { color: #28a745; }
+
+    /* Download buttons in security review */
+    .security-review-container [data-testid="stDownloadButton"] button {
+        width: 100%;
+        padding: 0.5rem !important;
+        margin: 0 !important;
+        font-size: 0.875rem !important;
+        font-weight: 500 !important;
+        border-radius: 6px !important;
+        border: 1px solid #e5e7eb !important;
+        background-color: white !important;
+        color: #374151 !important;
+        transition: all 0.2s !important;
+    }
+    .security-review-container [data-testid="stDownloadButton"] button:hover {
+        background-color: #f9fafb !important;
+        border-color: #d1d5db !important;
+    }
+    .security-review-container [data-testid="stDownloadButton"] {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
 
     /* Metric adjustments */
     [data-testid="stMetricValue"], [data-testid="stMetricLabel"] {
@@ -443,7 +466,32 @@ def display_analysis_results(result_dict):
     
     col1, col2 = st.columns([4, 6])
     with col1:
+        # Render security review status
         render_security_review(result_dict.get('security_review', 'UNKNOWN'))
+        
+        # Add download buttons below security review
+        st.markdown("<div style='padding: 0.5rem;'>", unsafe_allow_html=True)
+        download_col1, download_col2 = st.columns(2)
+        with download_col1:
+            st.download_button(
+                "Download JSON",
+                data=json.dumps(result_dict, indent=2),
+                file_name=f"token_analysis_{st.session_state.token_address}.json",
+                mime="application/json",
+                use_container_width=True
+            )
+        with download_col2:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                pdf_path = create_pdf(result_dict, temp_dir)
+                with open(pdf_path, "rb") as pdf_file:
+                    st.download_button(
+                        "Download PDF",
+                        data=pdf_file.read(),
+                        file_name=f"token_analysis_{st.session_state.token_address}.pdf",
+                        mime="application/pdf",
+                        use_container_width=True
+                    )
+        st.markdown("</div>", unsafe_allow_html=True)
     
     with col2:
         render_metric_with_value("TOKEN PROGRAM",
@@ -470,8 +518,6 @@ def display_analysis_results(result_dict):
     
     with st.expander("View Raw Data"):
         st.json(result_dict)
-    
-    render_download_buttons(result_dict, st.session_state.token_address)
 
 def render_batch_analysis():
     """Render the batch analysis interface."""
