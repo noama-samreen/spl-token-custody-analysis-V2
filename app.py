@@ -300,21 +300,15 @@ with tab1:
                             # Freeze Authority (thin)
                             st.markdown('<div class="authority-section">', unsafe_allow_html=True)
                             freeze_auth = result_dict.get('freeze_authority', 'None')
-                            if freeze_auth and freeze_auth != 'None':
-                                st.metric("FREEZE AUTHORITY", "")
-                                st.markdown(f'<div class="address-display">{freeze_auth}</div>', unsafe_allow_html=True)
-                            else:
-                                st.metric("FREEZE AUTHORITY", '<div class="address-display">None</div>')
+                            st.metric("FREEZE AUTHORITY", "")
+                            st.markdown(f'<div class="address-display">{freeze_auth}</div>', unsafe_allow_html=True)
                             st.markdown('</div>', unsafe_allow_html=True)
                             
                             # Update Authority (thin)
                             st.markdown('<div class="authority-section">', unsafe_allow_html=True)
                             update_auth = result_dict.get('update_authority', 'None')
-                            if update_auth and update_auth != 'None':
-                                st.metric("UPDATE AUTHORITY", "")
-                                st.markdown(f'<div class="address-display">{update_auth}</div>', unsafe_allow_html=True)
-                            else:
-                                st.metric("UPDATE AUTHORITY", '<div class="address-display">None</div>')
+                            st.metric("UPDATE AUTHORITY", "")
+                            st.markdown(f'<div class="address-display">{update_auth}</div>', unsafe_allow_html=True)
                             st.markdown('</div>', unsafe_allow_html=True)
 
                             # If token is Token-2022, display extension features
