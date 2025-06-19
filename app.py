@@ -300,14 +300,14 @@ with tab1:
                             # Freeze Authority (thin)
                             st.markdown('<div class="authority-section">', unsafe_allow_html=True)
                             freeze_auth = result_dict.get('freeze_authority', 'None')
-                            st.metric("FREEZE AUTHORITY", "None" if not freeze_auth or freeze_auth == 'None' else "")
+                            #st.metric("FREEZE AUTHORITY", "None" if not freeze_auth or freeze_auth == 'None' else "")
                             st.markdown(f'<div class="address-display">{freeze_auth}</div>', unsafe_allow_html=True)
                             st.markdown('</div>', unsafe_allow_html=True)
                             
                             # Update Authority (thin)
                             st.markdown('<div class="authority-section">', unsafe_allow_html=True)
                             update_auth = result_dict.get('update_authority', 'None')
-                            st.metric("UPDATE AUTHORITY", "None" if not update_auth or update_auth == 'None' else "")
+                           # st.metric("UPDATE AUTHORITY", "None" if not update_auth or update_auth == 'None' else "")
                             st.markdown(f'<div class="address-display">{update_auth}</div>', unsafe_allow_html=True)
                             st.markdown('</div>', unsafe_allow_html=True)
 
@@ -341,8 +341,6 @@ with tab1:
                                 st.markdown(f'<div class="address-display">{fees}</div>', unsafe_allow_html=True)
                                 st.markdown('</div>', unsafe_allow_html=True)
                         
-                        # Add spacing between sections
-                        st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
                         
                         # Display failing checks and mitigation UI
                         if failing_checks:
