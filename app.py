@@ -304,7 +304,7 @@ with tab1:
                                 st.metric("FREEZE AUTHORITY", "")
                                 st.markdown(f'<div class="address-display">{freeze_auth}</div>', unsafe_allow_html=True)
                             else:
-                                st.metric("FREEZE AUTHORITY", f'<div class="address-display">'None'</div>')
+                                st.metric("FREEZE AUTHORITY", '<div class="address-display">None</div>')
                             st.markdown('</div>', unsafe_allow_html=True)
                             
                             # Update Authority (thin)
@@ -314,7 +314,7 @@ with tab1:
                                 st.metric("UPDATE AUTHORITY", "")
                                 st.markdown(f'<div class="address-display">{update_auth}</div>', unsafe_allow_html=True)
                             else:
-                                st.metric("UPDATE AUTHORITY", f'<div class="address-display">'None'</div>')
+                                st.metric("UPDATE AUTHORITY", '<div class="address-display">None</div>')
                             st.markdown('</div>', unsafe_allow_html=True)
 
                             # If token is Token-2022, display extension features
