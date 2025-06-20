@@ -354,7 +354,8 @@ def render_batch_download_buttons(results):
                 "Download JSON",
                 data=json.dumps(results, indent=2),
                 file_name="token_analysis_results.json",
-                mime="application/json"
+                mime="application/json",
+                key="batch_json_download"  # Add unique key
             )
     
     with col2:
@@ -364,7 +365,8 @@ def render_batch_download_buttons(results):
                 "Download CSV",
                 data=csv_data,
                 file_name="token_analysis_results.csv",
-                mime="text/csv"
+                mime="text/csv",
+                key="batch_csv_download"  # Add unique key
             )
     
     with col3:
@@ -377,7 +379,8 @@ def render_batch_download_buttons(results):
                             "Download PDFs",
                             data=zip_file.read(),
                             file_name="token_analysis_pdfs.zip",
-                            mime="application/zip"
+                            mime="application/zip",
+                            key="batch_pdf_download"  # Add unique key
                         )
                 else:
                     st.error("Failed to generate PDF reports")
@@ -609,24 +612,25 @@ def process_batch_analysis(addresses, batch_reviewer_name, batch_confirmation_st
     status_text = st.empty()
     
     try:
-        results = asyncio.run(process_batch_tokens(
-            addresses, progress_bar, status_text,
-            batch_reviewer_name, batch_confirmation_status
-        ))
+        if 'batch_results' not in st.session_state:
+            results = asyncio.run(process_batch_tokens(
+                addresses, progress_bar, status_text,
+                batch_reviewer_name, batch_confirmation_status
+            ))
+            
+            # Filter out None or error results
+            valid_results = [r for r in results if isinstance(r, dict) and r.get('status') != 'error']
+            
+            if not valid_results:
+                st.error("No valid results were generated from the analysis")
+                return
+            
+            st.session_state.batch_results = valid_results
+            st.success(f"Successfully processed {len(valid_results)} tokens")
         
-        # Filter out None or error results
-        valid_results = [r for r in results if isinstance(r, dict) and r.get('status') != 'error']
-        
-        if not valid_results:
-            st.error("No valid results were generated from the analysis")
-            return
-        
-        st.session_state.batch_results = valid_results
-        st.success(f"Successfully processed {len(valid_results)} tokens")
-        
+        # Always display results if they exist in session state
         if st.session_state.batch_results:
-            render_batch_results(valid_results)
-            render_batch_download_buttons(valid_results)
+            render_batch_results(st.session_state.batch_results)
     
     except Exception as e:
         st.error(f"Error during batch processing: {str(e)}")
@@ -663,6 +667,11 @@ async def process_batch_tokens(addresses, progress_bar, status_text,
 def render_batch_results(results):
     """Render the batch analysis results."""
     st.markdown("### Analysis Results")
+    
+    # Add download buttons at the top
+    render_batch_download_buttons(results)
+    
+    # Display results in expandable sections
     for i, result in enumerate(results):
         if isinstance(result, dict):
             with st.expander(f"Token {i+1}: {result.get('address', 'Unknown')}"):
