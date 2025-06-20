@@ -1,0 +1,18 @@
+{
+    "token_address_1": {
+      "freeze_authority": {
+        "documentation": "Freeze authority is controlled by multisig [view details](https://example.com)",
+        "applied": true
+      }
+    },
+    "token_address_2": {
+      "transfer_hook": {
+        "documentation": "Transfer hook is audited by XYZ Labs [audit report](https://example.com)",
+        "applied": true
+      },
+      "permanent_delegate": {
+        "documentation": "Permanent delegate is required for protocol operations [docs](https://example.com)",
+        "applied": true
+      }
+    }
+  }
