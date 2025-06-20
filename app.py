@@ -349,32 +349,38 @@ def render_batch_download_buttons(results):
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.download_button(
-            "Download JSON",
-            data=json.dumps(results, indent=2),
-            file_name="token_analysis_results.json",
-            mime="application/json"
-        )
+        if results:
+            st.download_button(
+                "Download JSON",
+                data=json.dumps(results, indent=2),
+                file_name="token_analysis_results.json",
+                mime="application/json"
+            )
     
     with col2:
-        csv_data = generate_csv_data(results)
-        st.download_button(
-            "Download CSV",
-            data=csv_data,
-            file_name="token_analysis_results.csv",
-            mime="text/csv"
-        )
+        if results:
+            csv_data = generate_csv_data(results)
+            st.download_button(
+                "Download CSV",
+                data=csv_data,
+                file_name="token_analysis_results.csv",
+                mime="text/csv"
+            )
     
     with col3:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            zip_path = create_pdf_zip(results, temp_dir)
-            with open(zip_path, "rb") as zip_file:
-                st.download_button(
-                    "Download PDFs",
-                    data=zip_file.read(),
-                    file_name="token_analysis_pdfs.zip",
-                    mime="application/zip"
-                )
+        if results:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                zip_path = create_pdf_zip(results, temp_dir)
+                if zip_path and os.path.exists(zip_path):
+                    with open(zip_path, "rb") as zip_file:
+                        st.download_button(
+                            "Download PDFs",
+                            data=zip_file.read(),
+                            file_name="token_analysis_pdfs.zip",
+                            mime="application/zip"
+                        )
+                else:
+                    st.error("Failed to generate PDF reports")
 
 def generate_csv_data(results):
     """Generate CSV data from analysis results."""
@@ -389,12 +395,42 @@ def generate_csv_data(results):
 def create_pdf_zip(results, temp_dir):
     """Create a ZIP file containing PDFs for all analysis results."""
     zip_path = os.path.join(temp_dir, "token_analysis_pdfs.zip")
-    with zipfile.ZipFile(zip_path, 'w') as zipf:
+    pdf_files = []
+    
+    try:
+        # First generate all PDFs
         for result in results:
-            if isinstance(result, dict) and result.get('status') == 'success':
-                pdf_path = create_pdf(result, temp_dir)
-                zipf.write(pdf_path, os.path.basename(pdf_path))
-    return zip_path
+            if isinstance(result, dict) and result.get('status') != 'error':
+                try:
+                    # Ensure required fields exist
+                    if not result.get('address'):
+                        st.warning(f"Skipping result - missing address: {result}")
+                        continue
+                        
+                    # Generate PDF
+                    pdf_path = create_pdf(result, temp_dir)
+                    if pdf_path and os.path.exists(pdf_path):
+                        pdf_files.append(pdf_path)
+                    else:
+                        st.warning(f"Failed to generate PDF for token {result.get('address')}")
+                except Exception as e:
+                    st.error(f"Error generating PDF for token {result.get('address')}: {str(e)}")
+                    continue
+        
+        # Create ZIP only if we have PDFs
+        if pdf_files:
+            with zipfile.ZipFile(zip_path, 'w') as zipf:
+                for pdf_path in pdf_files:
+                    zipf.write(pdf_path, os.path.basename(pdf_path))
+            st.success(f"Successfully created ZIP with {len(pdf_files)} PDFs")
+        else:
+            st.error("No PDFs were generated successfully")
+            
+        return zip_path if pdf_files else None
+        
+    except Exception as e:
+        st.error(f"Error creating ZIP file: {str(e)}")
+        return None
 
 def main():
     """Main application entry point."""
@@ -578,14 +614,23 @@ def process_batch_analysis(addresses, batch_reviewer_name, batch_confirmation_st
             batch_reviewer_name, batch_confirmation_status
         ))
         
-        st.session_state.batch_results = results
-        st.success(f"Successfully processed {len(results)} tokens")
+        # Filter out None or error results
+        valid_results = [r for r in results if isinstance(r, dict) and r.get('status') != 'error']
+        
+        if not valid_results:
+            st.error("No valid results were generated from the analysis")
+            return
+        
+        st.session_state.batch_results = valid_results
+        st.success(f"Successfully processed {len(valid_results)} tokens")
         
         if st.session_state.batch_results:
-            render_batch_results(results)
+            render_batch_results(valid_results)
+            render_batch_download_buttons(valid_results)
     
     except Exception as e:
         st.error(f"Error during batch processing: {str(e)}")
+        st.exception(e)  # This will show the full traceback in development
 
 async def process_batch_tokens(addresses, progress_bar, status_text,
                              batch_reviewer_name, batch_confirmation_status):
@@ -617,8 +662,6 @@ async def process_batch_tokens(addresses, progress_bar, status_text,
 
 def render_batch_results(results):
     """Render the batch analysis results."""
-    render_batch_download_buttons(results)
-    
     st.markdown("### Analysis Results")
     for i, result in enumerate(results):
         if isinstance(result, dict):
