@@ -425,7 +425,6 @@ def create_pdf_zip(results, temp_dir):
             with zipfile.ZipFile(zip_path, 'w') as zipf:
                 for pdf_path in pdf_files:
                     zipf.write(pdf_path, os.path.basename(pdf_path))
-            st.success(f"Successfully created ZIP with {len(pdf_files)} PDFs")
         else:
             st.error("No PDFs were generated successfully")
             
@@ -689,7 +688,7 @@ def render_footer():
     st.markdown("---")
     st.markdown("""
     <div style='text-align: center; color: #666;'>
-        Made by <a href="https://github.com/noamasamreen" target="_blank">Noama Samreen</a> | 
+        <a href="https://github.com/noamasamreen" target="_blank">Noama Samreen</a> | 
         <a href="https://github.com/noamasamreen/spl-token-custody-risk-analyzer" target="_blank">GitHub</a>
     </div>
     """, unsafe_allow_html=True)
