@@ -592,18 +592,24 @@ def render_batch_analysis():
     uploaded_file = st.file_uploader(
         "Upload a text file with token addresses",
         type="txt",
-        help="File should contain one Solana token address per line"
+        help="File should contain one Solana token address per line",
+        key="batch_file_uploader"  # Add unique key
     )
     
     if uploaded_file:
         process_batch_upload(uploaded_file, batch_reviewer_name, batch_confirmation_status)
+    elif 'batch_results' in st.session_state and st.session_state.batch_results:
+        # Display existing results if they exist
+        render_batch_results(st.session_state.batch_results)
 
 def process_batch_upload(uploaded_file, batch_reviewer_name, batch_confirmation_status):
     """Process a batch upload of token addresses."""
     addresses = [line.decode().strip() for line in uploaded_file if line.decode().strip()]
     st.info(f"Found {len(addresses)} addresses in file")
     
-    if st.button("Process Batch", use_container_width=True):
+    if st.button("Process Batch", use_container_width=True, key="process_batch_button"):
+        # Clear previous results when starting new batch
+        st.session_state.batch_results = None
         process_batch_analysis(addresses, batch_reviewer_name, batch_confirmation_status)
 
 def process_batch_analysis(addresses, batch_reviewer_name, batch_confirmation_status):
@@ -612,7 +618,8 @@ def process_batch_analysis(addresses, batch_reviewer_name, batch_confirmation_st
     status_text = st.empty()
     
     try:
-        if 'batch_results' not in st.session_state:
+        # Always process if batch_results is None
+        if st.session_state.batch_results is None:
             results = asyncio.run(process_batch_tokens(
                 addresses, progress_bar, status_text,
                 batch_reviewer_name, batch_confirmation_status
