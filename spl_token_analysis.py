@@ -212,25 +212,32 @@ class TokenDetails:
             for check, mitigation in self.mitigations.items()
         }
         
-        # Update security review based on mitigations
-        has_unmitigated_risks = False
-        if self.freeze_authority and not (self.mitigations.get('freeze_authority', MitigationDetails('')).applied):
-            has_unmitigated_risks = True
-        if self.extensions:
-            if (self.extensions.permanent_delegate and 
-                not self.mitigations.get('permanent_delegate', MitigationDetails('')).applied):
-                has_unmitigated_risks = True
-            if (self.extensions.transfer_hook_authority and 
-                not self.mitigations.get('transfer_hook', MitigationDetails('')).applied):
-                has_unmitigated_risks = True
-            if (self.extensions.confidential_transfers_authority and 
-                not self.mitigations.get('confidential_transfers', MitigationDetails('')).applied):
-                has_unmitigated_risks = True
-            if (self.extensions.transfer_fee not in [None, 0] and 
-                not self.mitigations.get('transfer_fees', MitigationDetails('')).applied):
-                has_unmitigated_risks = True
+        # Calculate security review status based on risk score
+        risk_score = 1  # Default to lowest risk
         
-        result['security_review'] = 'FAILED' if has_unmitigated_risks else 'PASSED'
+        # Check for freeze authority
+        if self.freeze_authority:
+            if self.mitigations.get('freeze_authority', MitigationDetails('')).applied:
+                risk_score = max(risk_score, 4)  # Mitigated
+            else:
+                risk_score = 5  # Failed
+        
+        # Check Token 2022 specific features if present
+        if self.extensions:
+            for feature, value in {
+                'permanent_delegate': self.extensions.permanent_delegate,
+                'transfer_hook': self.extensions.transfer_hook_authority,
+                'confidential_transfers': self.extensions.confidential_transfers_authority,
+                'transfer_fees': self.extensions.transfer_fee
+            }.items():
+                if value not in [None, 0, 'None']:
+                    if self.mitigations.get(feature, MitigationDetails('')).applied:
+                        risk_score = max(risk_score, 4)  # Mitigated
+                    else:
+                        risk_score = 5  # Failed
+                        break
+        
+        result['security_review'] = 'PASSED' if risk_score < 5 else 'FAILED'
         return result
 
 @lru_cache(maxsize=100)
@@ -624,46 +631,3 @@ async def process_tokens_concurrently(token_addresses: List[str], session: aioht
     return await asyncio.gather(
         *(process_single_token(addr, idx) for idx, addr in enumerate(token_addresses))
     )
-
-async def main():
-    try:
-        import sys
-        if len(sys.argv) > 1:
-            input_file = sys.argv[1]
-            output_prefix = sys.argv[2] if len(sys.argv) > 2 else "spl_token_details"
-            with open(input_file, 'r') as f:
-                token_addresses = [line.strip() for line in f if line.strip()]
-        else:
-            token_address = input("Enter Solana token address: ").strip()
-            token_addresses = [token_address]
-            output_prefix = "single_token"
-        
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
-        json_output = f"{output_prefix}_{timestamp}.json"
-        log_output = f"{output_prefix}_{timestamp}.log"
-        
-        # Configure logging
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(log_output),
-                logging.StreamHandler()
-            ]
-        )
-        
-        async with aiohttp.ClientSession(timeout=SESSION_TIMEOUT) as session:
-            results = await process_tokens_concurrently(token_addresses, session)
-            
-            # Write outputs
-            with open(json_output, 'w') as f:
-                json.dump(results, f, indent=2)
-            
-            logging.info(f"Analysis complete. Check {json_output} for results.")
-            
-    except Exception as e:
-        logging.error(f"An error occurred: {str(e)}")
-        raise
-
-if __name__ == "__main__":
-    asyncio.run(main())
