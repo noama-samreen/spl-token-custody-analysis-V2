@@ -458,6 +458,18 @@ trusted Token Program"""
         elements.append(Spacer(1, 8))
         elements.append(Paragraph("<b>Mitigations:</b>", risk_body_style))
         elements.append(Paragraph("N/A", risk_body_style))
+        elements.append(Spacer(1, 8))
+
+        # Add mitigations from token data if they exist
+        if 'mitigations' in token_data:
+            elements.append(Paragraph("<b>Additional Mitigations:</b>", risk_header_style))
+            elements.append(Spacer(1, 8))
+            
+            for mitigation_type, mitigation_data in token_data['mitigations'].items():
+                if isinstance(mitigation_data, dict) and 'documentation' in mitigation_data:
+                    elements.append(Paragraph(f"<b>{mitigation_type.replace('_', ' ').title()}:</b>", risk_subheader_style))
+                    elements.append(Paragraph(mitigation_data['documentation'], risk_body_style))
+                    elements.append(Spacer(1, 15))
         
         # Transfer Hook Check
         hook_value = token_data.get('transfer_hook', 'None')
